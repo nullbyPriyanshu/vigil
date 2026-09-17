@@ -12,8 +12,44 @@ datasource db {
   provider = "postgresql"
 }
 
-model Ping {
-id        String @id @default(uuid())
-message   String
-createdAt DateTime @default(now())
+enum Role {
+  OWNER
+  ADMIN
+  RESPONDER
+  VIEWER
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  timezone     String       @default("Asia/Kolkata")
+  createdAt    DateTime     @default(now())
+
+  memberships  Membership[]
+}
+
+model Organization {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  slug         String       @unique
+  createdAt    DateTime     @default(now())
+
+  memberships  Membership[]
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  role           Role
+
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
 }

@@ -3,4 +3,7 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@parcel/watcher': true
+  '@prisma/engines': true
+  bcrypt: true
+  prisma: true
   unrs-resolver: true
