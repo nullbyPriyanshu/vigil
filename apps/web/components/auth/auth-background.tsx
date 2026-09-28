@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import { Navbar } from "@/components/navbar";
 import { SpotlightBackdrop } from "@/components/spotlight-backdrop";
 
-// Shared chrome for auth pages (signup, login, ...): the navbar, the dark
-// spotlight backdrop, and a centered column for the page's own card. Pulled
-// out so every auth page doesn't have to re-implement the same layout.
+// Shared chrome for auth pages (signup, login, ...): the navbar, the same
+// flat, solid backdrop as the landing page, and a centered column for the
+// page's own card. Pulled out so every auth page doesn't have to
+// re-implement the same layout.
 export function AuthBackground({ children }: { children: ReactNode }) {
   return (
-    <SpotlightBackdrop variant="auth" className="h-dvh">
+    <SpotlightBackdrop variant="landing" className="h-dvh">
       {/* No login/user section here: these pages are only reachable while
           logged out, and the page itself already has the login/signup form. */}
       <Navbar showAuth={false} />

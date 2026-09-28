@@ -142,3 +142,63 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-card-in { animation: none; }
 }
+
+/* Indeterminate sweep for GlobalLoader's top progress bar — there's no real
+   percentage to show (queries don't report progress), so a fixed-width bar
+   travels across the track on a loop instead of filling up. Animating
+   `left` rather than `transform: translateX(%)` because a translate
+   percentage resolves against the bar's own width, not the track's — with
+   a 1/3-width bar that undershoots the sweep. `left` on an absolutely
+   positioned element resolves against the track underneath it instead. */
+@keyframes global-loader-sweep {
+  0%   { left: -33%; }
+  100% { left: 100%; }
+}
+
+.animate-global-loader-sweep {
+  animation: global-loader-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-global-loader-sweep { animation: none; }
+}
+
+/* Dark/light toggle: instead of the browser's default cross-fade, the new
+   theme is revealed through an expanding circle anchored at the top-right
+   corner (where the toggle itself lives, in the header) and growing out
+   toward the opposite corner — a wave, not a snap. ThemeToggle sets
+   --theme-toggle-radius (in px, computed from the actual viewport so the
+   circle is guaranteed to fully cover it) right before starting the
+   transition; the x/y anchor is a fixed corner so it doesn't need to be
+   computed per click. These pseudo-elements only ever exist while a
+   startViewTransition() is active, so this rule is inert everywhere else —
+   no feature-detection needed here, only where the JS decides whether to
+   call that API at all. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+  clip-path: circle(0px at 100% 0px);
+  animation: theme-toggle-reveal 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes theme-toggle-reveal {
+  to {
+    clip-path: circle(var(--theme-toggle-radius, 150vmax) at 100% 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}

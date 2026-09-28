@@ -30,28 +30,16 @@ function HeroButtons() {
     );
   }
 
+  // Just the one CTA — "Log in" lives in the navbar's top-right corner,
+  // not repeated here too.
   return (
-    <>
-      <Link
-        href="/signup"
-        className={cn(buttonVariants({ size: "lg", className: heroButton }))}
-      >
-        Get started
-        <ArrowRight className="transition-transform group-hover/button:translate-x-0.5" />
-      </Link>
-      <Link
-        href="/login"
-        className={cn(
-          buttonVariants({
-            variant: "outline",
-            size: "lg",
-            className: heroButton,
-          }),
-        )}
-      >
-        Log in
-      </Link>
-    </>
+    <Link
+      href="/signup"
+      className={cn(buttonVariants({ size: "lg", className: heroButton }))}
+    >
+      Get started
+      <ArrowRight className="transition-transform group-hover/button:translate-x-0.5" />
+    </Link>
   );
 }
 

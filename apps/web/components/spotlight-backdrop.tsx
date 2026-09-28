@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useTheme } from "next-themes";
 import { addBulgedGrid } from "@/lib/grid-bulge";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,11 @@ type Variant = "auth" | "landing";
 const VARIANTS: Record<
   Variant,
   {
+    // Whether there's a grid at all — landing is a flat, solid surface now
+    // (matching the dashboard's own content panel), so this is the only
+    // field that variant actually reads; everything else below it is
+    // dead weight for that variant and stays unread.
+    hasGrid: boolean;
     gridAlpha: number;
     gridMask: string;
     // Whether the grid reacts to the cursor at all (a dome that rises under
@@ -21,27 +27,31 @@ const VARIANTS: Record<
     // Only read when interactive is true.
     lightAlpha: number;
     bulge: number;
+    // A light- and dark-mode radial gradient pair — CSS handles this one
+    // (unlike the canvas-drawn grid, which needs the resolved theme in JS).
     glow: string;
   }
 > = {
   // Login/signup: the grid is barely there (and fades out down the page) so
   // the card stays the focus; the cursor light is what brings it to life.
+  // The grid stays flat (bulge 0) — only the torch reveal and glow follow
+  // the cursor, no dome swelling under it.
   auth: {
+    hasGrid: true,
     gridAlpha: 0.05,
     gridMask:
       "[mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)]",
     interactive: true,
     lightAlpha: 0.45,
-    bulge: 1,
-    glow: "bg-[radial-gradient(circle,rgba(255,255,255,0.10),transparent_70%)]",
+    bulge: 0,
+    glow: "bg-[radial-gradient(circle,rgba(0,0,0,0.06),transparent_70%)] dark:bg-[radial-gradient(circle,rgba(255,255,255,0.10),transparent_70%)]",
   },
-  // Landing: the grid is visible behind the whole hero, but stays completely
-  // still — no dome, no cursor-lit reveal, no trailing glow — so it reads as
-  // ambient texture and doesn't compete with the hero copy.
+  // Landing: a flat, solid surface — same idea as the dashboard's own
+  // content panel — so the hero copy is the only thing to look at.
   landing: {
-    gridAlpha: 0.1,
-    gridMask:
-      "[mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,black_30%,transparent)]",
+    hasGrid: false,
+    gridAlpha: 0,
+    gridMask: "",
     interactive: false,
     lightAlpha: 0,
     bulge: 0,
@@ -49,12 +59,16 @@ const VARIANTS: Record<
   },
 };
 
-// Dark, full-page shell shared by the landing page and the auth pages: a
-// backdrop grid, with the page's own content (navbar, cards, hero, ...)
-// rendered on top. On variants marked `interactive` the grid also swells
-// into a dome under the cursor and lights up around it. Pulled out so no
-// page has to re-implement the same background logic. The caller sets the
-// height (e.g. "h-dvh" or "min-h-dvh") via className.
+// Full-page shell shared by the landing page and the auth pages: a backdrop
+// grid, with the page's own content (navbar, cards, hero, ...) rendered on
+// top. On variants marked `interactive` the grid also swells into a dome
+// under the cursor and lights up around it. Follows the real site theme
+// (next-themes, via the class on <html>) rather than forcing dark, so the
+// canvas-drawn grid's stroke color is resolved here in JS and repainted
+// whenever the theme changes — CSS `dark:` can't reach inside a canvas
+// draw call the way it can a background-image. Pulled out so no page has
+// to re-implement the same background logic. The caller sets the height
+// (e.g. "h-dvh" or "min-h-dvh") via className.
 export function SpotlightBackdrop({
   children,
   className,
@@ -64,21 +78,29 @@ export function SpotlightBackdrop({
   className?: string;
   variant: Variant;
 }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [isSpotlightActive, setIsSpotlightActive] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const lightRef = useRef<HTMLCanvasElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);
 
-  const { gridAlpha, gridMask, interactive, lightAlpha, bulge, glow } =
+  const { hasGrid, gridAlpha, gridMask, interactive, lightAlpha, bulge, glow } =
     VARIANTS[variant];
+  // Dark-mode lines are light-on-dark (white); light-mode lines are the
+  // reverse (a soft near-black, matching the app-shell's own zinc-900
+  // borders rather than pure black).
+  const strokeRGB = isDark ? "255,255,255" : "15,15,17";
 
-  // Static grid for non-interactive variants: drawn once (and on resize),
-  // with no cursor tracking at all. No-ops for interactive variants, which
-  // draw the same base canvas themselves (bent together with the light
-  // canvas) in the effect below.
+  // Static grid for non-interactive variants: drawn once (and on resize,
+  // or a theme change), with no cursor tracking at all. No-ops for
+  // interactive variants, which draw the same base canvas themselves
+  // (bent together with the light canvas) in the effect below — and for
+  // variants with no grid at all, which don't even render the canvas this
+  // would draw into.
   useEffect(() => {
-    if (interactive) return;
+    if (interactive || !hasGrid) return;
     const root = rootRef.current;
     const baseCanvas = baseRef.current;
     const baseCtx = baseCanvas?.getContext("2d");
@@ -91,7 +113,7 @@ export function SpotlightBackdrop({
       const grid = new Path2D();
       addBulgedGrid(grid, width, height, 0, 0, 0);
       baseCtx.clearRect(0, 0, width, height);
-      baseCtx.strokeStyle = `rgba(255,255,255,${gridAlpha})`;
+      baseCtx.strokeStyle = `rgba(${strokeRGB},${gridAlpha})`;
       baseCtx.lineWidth = 1;
       baseCtx.stroke(grid);
     };
@@ -122,7 +144,7 @@ export function SpotlightBackdrop({
       cancelAnimationFrame(fadeInId);
       resizeObserver.disconnect();
     };
-  }, [interactive, gridAlpha]);
+  }, [interactive, hasGrid, gridAlpha, strokeRGB]);
 
   // Cursor effects (dome + torch reveal + trailing glow) for variants that
   // opt in. Everything here is imperative (canvas draws, CSS variables,
@@ -171,7 +193,7 @@ export function SpotlightBackdrop({
         [lightCtx, lightAlpha],
       ] as const) {
         ctx.clearRect(0, 0, width, height);
-        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.strokeStyle = `rgba(${strokeRGB},${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke(grid);
       }
@@ -298,30 +320,30 @@ export function SpotlightBackdrop({
       root.removeEventListener("pointermove", handlePointerMove);
       root.removeEventListener("pointerleave", handlePointerLeave);
     };
-  }, [interactive, gridAlpha, lightAlpha, bulge]);
+  }, [interactive, gridAlpha, lightAlpha, bulge, strokeRGB]);
 
   return (
-    // "dark" is forced here so these pages read consistently regardless of
-    // the visitor's system/site theme preference. "text-foreground" is
-    // explicit (not just inherited from <body>) because <body> sits outside
-    // this forced-dark subtree and would otherwise hand down light-mode text
-    // color to any child that doesn't set its own (e.g. labels, input text).
+    // "text-foreground" is explicit (not just inherited from <body>) so it
+    // stays correct regardless of where in the tree this backdrop sits.
     <div
       ref={rootRef}
       className={cn(
-        "dark relative flex flex-col overflow-hidden bg-background text-foreground",
+        "relative flex flex-col overflow-hidden bg-white text-foreground transition-colors duration-300 dark:bg-zinc-950",
         className,
       )}
     >
-      {/* Ambient grid: faint, fading out toward the edges, no imagery. */}
-      <canvas
-        ref={baseRef}
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute inset-0 size-full opacity-0 transition-opacity duration-700",
-          gridMask,
-        )}
-      />
+      {/* Ambient grid: faint, fading out toward the edges, no imagery.
+          Not rendered at all for a flat, solid variant (landing). */}
+      {hasGrid && (
+        <canvas
+          ref={baseRef}
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-0 size-full opacity-0 transition-opacity duration-700",
+            gridMask,
+          )}
+        />
+      )}
       {interactive && (
         <>
           {/* Same grid, brighter, revealed only in a circle that eases
@@ -349,10 +371,15 @@ export function SpotlightBackdrop({
           />
         </>
       )}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-0 left-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/10 blur-[120px]"
-      />
+      {/* Reuses hasGrid: for the two variants that exist today, "no grid"
+          and "no ambient glow" are the same call — a fully flat surface,
+          not just a flat one with a soft blob left over. */}
+      {hasGrid && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/10 blur-[120px]"
+        />
+      )}
 
       {children}
     </div>
