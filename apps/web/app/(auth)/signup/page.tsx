@@ -85,10 +85,10 @@ export default function SignupPage() {
 
   return (
     <AuthBackground>
-      <div className="animate-card-in rounded-2xl border border-border bg-card p-7 shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset,0_24px_48px_-12px_rgba(0,0,0,0.6)] sm:p-9">
-        <div className="mb-6 space-y-1.5 text-center">
-          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
-            Create your account
+      <div className="animate-card-in">
+        <div className="mb-8 space-y-1.5">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Create your <span className="text-emerald-600 dark:text-emerald-400">account</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             Set up your organization and start routing alerts to whoever is
@@ -229,7 +229,7 @@ export default function SignupPage() {
           </form>
         </Form>
 
-        <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
           By creating an account, you agree to our{" "}
           <Link
             href="/terms"
@@ -248,7 +248,7 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <p className="mt-5 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href="/login"

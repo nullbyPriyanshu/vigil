@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
+import { DotGlobe } from "@/components/auth/dot-globe";
 import { Navbar } from "@/components/navbar";
 import { SpotlightBackdrop } from "@/components/spotlight-backdrop";
 
-// Shared chrome for auth pages (signup, login, ...): the navbar, the same
-// flat, solid backdrop as the landing page, and a centered column for the
-// page's own card. Pulled out so every auth page doesn't have to
-// re-implement the same layout.
+// Shared chrome for auth pages (signup, login, ...): the navbar over a
+// two-column split on wide screens, a static dotted globe on the left and
+// the page's form on the right. Phones get the form alone. The form
+// sits straight on the page surface (no card), so the layout itself does
+// the framing. Pulled out so every auth page doesn't have to re-implement
+// the same layout.
 export function AuthBackground({ children }: { children: ReactNode }) {
   return (
     <SpotlightBackdrop variant="landing" className="h-dvh">
@@ -13,10 +16,13 @@ export function AuthBackground({ children }: { children: ReactNode }) {
           logged out, and the page itself already has the login/signup form. */}
       <Navbar showAuth={false} />
 
-      {/* Content area fills the space below the navbar and centers the card
-          in it, so the navbar gets its own row instead of overlapping. */}
-      <div className="relative flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
-        <div className="relative w-full max-w-[500px]">{children}</div>
+      <div className="relative grid min-h-0 flex-1 lg:grid-cols-2">
+        <div aria-hidden className="relative hidden lg:block">
+          <DotGlobe />
+        </div>
+        <div className="flex items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
+          <div className="w-full max-w-[400px]">{children}</div>
+        </div>
       </div>
     </SpotlightBackdrop>
   );

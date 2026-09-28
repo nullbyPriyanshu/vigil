@@ -75,10 +75,10 @@ export default function LoginPage() {
 
   return (
     <AuthBackground>
-      <div className="animate-card-in rounded-2xl border border-border bg-card p-7 shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset,0_24px_48px_-12px_rgba(0,0,0,0.6)] sm:p-9">
-        <div className="mb-6 space-y-1.5 text-center">
-          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
-            Welcome back
+      <div className="animate-card-in">
+        <div className="mb-8 space-y-1.5">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <span className="text-emerald-600 dark:text-emerald-400">Welcome</span> back
           </h1>
           <p className="text-sm text-muted-foreground">
             Log in to see who&apos;s on call and manage your alerts.
@@ -169,7 +169,7 @@ export default function LoginPage() {
         </Form>
       </div>
 
-      <p className="mt-5 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"

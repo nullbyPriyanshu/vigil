@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
@@ -55,8 +56,10 @@ export function Navbar({ showAuth = true }: { showAuth?: boolean }) {
     <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#09090b]">
       <Link
         href="/"
-        className="font-mono text-lg font-bold tracking-widest text-zinc-900 uppercase dark:text-zinc-100"
+        className="flex shrink-0 items-center gap-2 font-mono text-lg leading-none font-bold tracking-widest text-zinc-900 uppercase dark:text-zinc-100"
       >
+        {/* Decorative: the "Vigil" text next to it is the link's name. */}
+        <Image src="/logo-vigil.png" alt="" width={22} height={22} priority />
         Vigil
       </Link>
       <div className="flex shrink-0 items-center gap-2">
