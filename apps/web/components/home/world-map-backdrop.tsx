@@ -258,6 +258,9 @@ export function WorldMapBackdrop({
     };
 
     const draw = (time: number, m: number, stop: number) => {
+      // Nothing to draw into while hidden/unsized, and drawImage throws on
+      // a zero-sized source canvas.
+      if (!width || !height) return;
       const t = reduceMotion ? 0 : time / 1000;
       ctx.clearRect(0, 0, width, height);
 

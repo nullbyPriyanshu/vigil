@@ -115,7 +115,7 @@ export default function SignupPage() {
                     <FormLabel className="!text-foreground">Full name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="John Doe"
+                        placeholder="Alex Smith"
                         autoComplete="name"
                         className={fieldClass}
                         {...field}
@@ -161,7 +161,7 @@ export default function SignupPage() {
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="john@acme.com"
+                      placeholder="you@example.com"
                       autoComplete="email"
                       className={fieldClass}
                       {...field}

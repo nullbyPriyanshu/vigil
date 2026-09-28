@@ -249,6 +249,9 @@ export function DotGlobe({ className }: { className?: string }) {
       route[Math.round(Math.min(Math.max(t, 0), 1) * SAMPLES)];
 
     const draw = (time: number) => {
+      // The globe's column is display:none below lg, which leaves the
+      // canvases 0x0, and drawImage throws on a zero-sized source.
+      if (!width || !height) return;
       const t = time / 1000;
       ctx.clearRect(0, 0, width, height);
       ctx.drawImage(base, 0, 0, width, height);
