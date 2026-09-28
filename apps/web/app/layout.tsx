@@ -44,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               the always-dark auth/landing pages, so they stay one look
               everywhere rather than following the app-shell's toggle. */}
           <div className="dark">
-            <Toaster position="top-right" />
+            <Toaster position="top-center" />
           </div>
         </ThemeProvider>
       </body>

@@ -12,13 +12,13 @@ export default function Home() {
           instead of clipping. */}
       <main className="relative flex flex-1 items-center justify-center px-4 py-16 sm:px-6">
         <div className="animate-card-in mx-auto flex max-w-2xl flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1 text-xs text-muted-foreground">
+          {/* <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1 text-xs text-muted-foreground">
             <span aria-hidden className="relative flex size-1.5">
               <span className="absolute inline-flex size-full rounded-full bg-emerald-400/70 motion-safe:animate-ping" />
               <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
             </span>
             On-call incident management
-          </span>
+          </span> */}
 
           {/* The fade-to-transparent gradient reads fine in dark mode
               (bright white easing to a still-legible gray), but the same
