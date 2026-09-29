@@ -28,7 +28,8 @@ model User {
   createdAt    DateTime     @default(now())
   memberships  Membership[]
 
-  refreshTokens RefreshToken[] 
+  refreshTokens RefreshToken[]
+  passwordResets PasswordResetToken[]
 }
 
 model RefreshToken {
@@ -38,6 +39,19 @@ model RefreshToken {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
 
 model Organization {
   id           String       @id @default(uuid())

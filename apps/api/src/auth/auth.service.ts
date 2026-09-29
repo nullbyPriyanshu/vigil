@@ -10,12 +10,15 @@ import { SignupDto } from './dto/signup.dto';
 import { slugify } from './utils/slugify';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from 'src/mail/mail.service';
+import { createHash, randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -190,6 +193,50 @@ export class AuthService {
     return {
       access_token,
       refresh_token: new_refresh_token,
+    };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return {
+        message:
+          'If an account exists with this email, a password reset link has been sent.',
+      };
+    }
+
+    const resetToken = randomBytes(32).toString('hex');
+
+    const tokenHash = createHash('sha256').update(resetToken).digest('hex');
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        tokenHash,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    await this.mailService.sendForgotPasswordEmail(
+      user.email,
+      user.name,
+      resetToken,
+    );
+
+    return {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
     };
   }
 }
