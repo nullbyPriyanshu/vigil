@@ -239,4 +239,49 @@ export class AuthService {
         'If an account exists with this email, a password reset link has been sent.',
     };
   }
+
+  async resetPassword(data: { token: string; password: string }) {
+    const tokenHash = createHash('sha256').update(data.token).digest('hex');
+
+    const passwordReset = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!passwordReset || passwordReset.expiresAt <= new Date()) {
+      if (passwordReset) {
+        await this.prisma.passwordResetToken.delete({
+          where: { id: passwordReset.id },
+        });
+      }
+
+      throw new UnauthorizedException('Invalid or expired password reset link');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: passwordReset.userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid password reset request');
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+
+      this.prisma.passwordResetToken.delete({
+        where: { id: passwordReset.id },
+      }),
+    ]);
+
+    await this.mailService.sendPasswordResetSuccessEmail(user.email, user.name);
+
+    return {
+      message: 'Password reset successfully',
+    };
+  }
 }

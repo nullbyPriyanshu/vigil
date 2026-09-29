@@ -204,4 +204,165 @@ export class MailService {
 
     return data;
   }
+
+  async sendPasswordResetSuccessEmail(email: string, name: string) {
+    const { data, error } = await this.resend.emails.send({
+      from: this.from,
+      to: email,
+      subject: 'Your VIGIL password was reset',
+      html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+          />
+          <title>Password Reset Successful</title>
+        </head>
+
+        <body style="
+          margin: 0;
+          padding: 40px 20px;
+          background-color: #08090a;
+          font-family: Arial, Helvetica, sans-serif;
+          color: #e5e7eb;
+        ">
+
+          <table
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="background-color: #08090a;"
+          >
+            <tr>
+              <td align="center">
+
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="
+                    max-width: 520px;
+                    background-color: #111315;
+                    border: 1px solid #24282b;
+                    border-radius: 12px;
+                    overflow: hidden;
+                  "
+                >
+
+                  <!-- Header -->
+                  <tr>
+                    <td style="padding: 28px 32px 20px;">
+                      <div style="
+                        font-size: 22px;
+                        font-weight: 700;
+                        letter-spacing: 3px;
+                        color: #f5f5f5;
+                      ">
+                        <span style="color: #10b981;">V</span>IGIL
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 20px 32px 36px;">
+
+                      <h1 style="
+                        margin: 0 0 16px;
+                        font-size: 26px;
+                        line-height: 1.3;
+                        color: #f5f5f5;
+                      ">
+                        Password reset successful
+                      </h1>
+
+                      <p style="
+                        margin: 0 0 12px;
+                        font-size: 15px;
+                        line-height: 1.6;
+                        color: #a1a1aa;
+                      ">
+                        Hi ${name},
+                      </p>
+
+                      <p style="
+                        margin: 0 0 20px;
+                        font-size: 15px;
+                        line-height: 1.6;
+                        color: #a1a1aa;
+                      ">
+                        Your VIGIL account password has been
+                        successfully reset.
+                      </p>
+
+                      <div style="
+                        padding: 14px 16px;
+                        background-color: #0d1915;
+                        border: 1px solid #164e3b;
+                        border-radius: 8px;
+                        margin-bottom: 24px;
+                      ">
+                        <p style="
+                          margin: 0;
+                          font-size: 14px;
+                          color: #10b981;
+                        ">
+                          Your account is secure and ready to use.
+                        </p>
+                      </div>
+
+                      <p style="
+                        margin: 0;
+                        font-size: 13px;
+                        line-height: 1.6;
+                        color: #71717a;
+                      ">
+                        If you did not make this change, please secure
+                        your account immediately and contact support.
+                      </p>
+
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="
+                      padding: 20px 32px;
+                      border-top: 1px solid #24282b;
+                    ">
+                      <p style="
+                        margin: 0;
+                        font-size: 12px;
+                        color: #52525b;
+                      ">
+                        © ${new Date().getFullYear()} VIGIL.
+                        All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+
+              </td>
+            </tr>
+          </table>
+
+        </body>
+      </html>
+    `,
+    });
+
+    if (error) {
+      throw new InternalServerErrorException(
+        `Failed to send password reset confirmation email: ${error.message}`,
+      );
+    }
+
+    return data;
+  }
 }
