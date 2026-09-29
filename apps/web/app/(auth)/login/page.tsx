@@ -20,7 +20,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { AuthBackground } from "@/components/auth/auth-background";
 
 import { loginApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api/errors";
@@ -74,7 +73,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthBackground>
+    <>
       <div className="animate-card-in">
         <div className="mb-8 space-y-1.5">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -118,7 +117,15 @@ export default function LoginPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="!text-foreground">Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="!text-foreground">Password</FormLabel>
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <div className="relative">
                     <FormControl>
                       <Input
@@ -178,6 +185,6 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
-    </AuthBackground>
+    </>
   );
 }

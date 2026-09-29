@@ -15,3 +15,9 @@ export const signupApi = (data: {
 export const getMeApi = () => api.get<Session>("/auth/me");
 
 export const logoutApi = () => api.post("/auth/logout");
+
+export const forgotPasswordApi = (email: string) =>
+  api.post<{ message: string }>("/auth/forgot-password", { email });
+
+export const resetPasswordApi = (token: string, password: string) =>
+  api.post<{ message: string }>("/auth/reset-password", { token, password });

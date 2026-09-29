@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await logoutApi();
     queryClient.clear();
-    router.push("login");
+    router.push("/login");
   };
 
   return (

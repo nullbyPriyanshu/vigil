@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Reachable without logging in.
-const PUBLIC_ROUTES = ["/", "/login", "/signup", "/forgot-password"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+];
 
-// Only for logged-out users. Logged-in users get sent to Home instead.
-// Keep "/" out of this list, or "/" would redirect to itself forever.
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
 export function proxy(request: NextRequest) {
@@ -12,12 +15,16 @@ export function proxy(request: NextRequest) {
 
   const isPublic =
     PUBLIC_ROUTES.includes(pathname) ||
-    pathname.startsWith("/invite/") || // day 13
-    pathname.startsWith("/a/"); // day 38, one-click acknowledge
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/a/");
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
   const hasToken = Boolean(request.cookies.get("vigil_token")?.value);
 
-  if (!hasToken && !isPublic) {
+  const hasRefreshToken = Boolean(
+    request.cookies.get("vigil_refresh_token")?.value,
+  );
+
+  if (!hasToken && !hasRefreshToken && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
