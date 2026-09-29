@@ -249,7 +249,7 @@ function IncidentCard({
 }) {
   return (
     <div
-      className={cn("rounded-xl border border-border bg-card/60 p-5", className)}
+      className={cn("rounded-xl border border-border bg-card/60 p-5 backdrop-blur-md", className)}
       style={style}
     >
       <div className="mb-5 flex items-center justify-between">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AuthIllustration } from "@/components/auth/auth-illustration";
 import { AuthShowcase } from "@/components/auth/auth-showcase";
 import { Navbar } from "@/components/navbar";
 import { SpotlightBackdrop } from "@/components/spotlight-backdrop";
@@ -12,6 +13,7 @@ import { SpotlightBackdrop } from "@/components/spotlight-backdrop";
 export function AuthBackground({ children }: { children: ReactNode }) {
   return (
     <SpotlightBackdrop variant="landing" className="h-dvh">
+      <AuthIllustration />
       {/* No login/user section here: these pages are only reachable while
           logged out, and the page itself already has the login/signup form. */}
       <Navbar showAuth={false} />
