@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -104,14 +105,28 @@ export class AuthService {
       );
     }
 
-    const token = await this.jwt.signAsync({
+    const access_token = await this.jwt.signAsync({
       sub: user.id,
       orgId: membership.organizationId,
       role: membership.role,
     });
 
+    const refresh_token = await this.jwt.signAsync({
+      sub: user.id,
+      orgId: membership.organizationId,
+      role: membership.role,
+    });
+
+    await this.prisma.refreshToken.create({
+      data: {
+        token: refresh_token,
+        userId: user.id,
+      },
+    });
+
     return {
-      token,
+      access_token,
+      refresh_token,
       user: {
         id: user.id,
         name: user.name,
@@ -144,6 +159,37 @@ export class AuthService {
         slug: membership.organization.slug,
       },
       role: membership.role,
+    };
+  }
+
+  async refresh(refresh_token) {
+    const token = await this.prisma.refreshToken.findFirst({
+      where: {
+        token: refresh_token,
+      },
+    });
+
+    if (!token) {
+      throw new NotFoundException('Inavlid Session!');
+    }
+
+    const user = await this.jwt.verifyAsync(token.token);
+
+    const access_token = await this.jwt.signAsync({
+      sub: user.sub,
+      orgId: user.orgId,
+      role: user.role,
+    });
+
+    const new_refresh_token = await this.jwt.signAsync({
+      sub: user.sub,
+      orgId: user.orgId,
+      role: user.role,
+    });
+
+    return {
+      access_token,
+      refresh_token: new_refresh_token,
     };
   }
 }

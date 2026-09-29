@@ -26,9 +26,18 @@ model User {
   name         String
   timezone     String       @default("Asia/Kolkata")
   createdAt    DateTime     @default(now())
-
   memberships  Membership[]
+
+  refreshTokens RefreshToken[] 
 }
+
+model RefreshToken {
+  id     String @id @default(uuid())
+  token  String @unique
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 
 model Organization {
   id           String       @id @default(uuid())
