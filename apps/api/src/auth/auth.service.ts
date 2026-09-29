@@ -1,20 +1,34 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma.service';
-import { SignupDto } from './dto/signup.dto';
-import { slugify } from './utils/slugify';
-import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { MailService } from 'src/mail/mail.service';
-import { createHash, randomBytes } from 'crypto';
+import { PrismaService } from '../prisma.service';
+import { MailService } from '../mail/mail.service';
+import { Prisma, type Membership } from '../generated/prisma/client';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { slugify } from './utils/slugify';
+import { generateToken, hashToken } from './utils/tokens';
+import {
+  BCRYPT_ROUNDS,
+  PASSWORD_RESET_TTL_MS,
+  REFRESH_TOKEN_TTL_MS,
+} from './auth.constants';
+import type { JwtPayload } from './auth.guard';
+
+const FORGOT_PASSWORD_MESSAGE =
+  'If an account exists with this email, a password reset link has been sent.';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -23,16 +37,18 @@ export class AuthService {
 
   async signup(dto: SignupDto) {
     const existing = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email,
-      },
+      where: { email: dto.email },
     });
-
     if (existing) {
       throw new ConflictException('An account with this email already exists');
     }
 
     const slug = slugify(dto.organizationName);
+    if (!slug) {
+      throw new BadRequestException(
+        'Organization name must contain at least one letter or number',
+      );
+    }
 
     const existingOrg = await this.prisma.organization.findUnique({
       where: { slug },
@@ -43,58 +59,70 @@ export class AuthService {
       );
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          passwordHash,
-          timezone: dto.timezone ?? 'Asia/Kolkata',
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            passwordHash,
+            timezone: dto.timezone ?? 'Asia/Kolkata',
+          },
+        });
+
+        const organization = await tx.organization.create({
+          data: { name: dto.organizationName, slug },
+        });
+
+        await tx.membership.create({
+          data: {
+            userId: user.id,
+            organizationId: organization.id,
+            role: 'OWNER',
+          },
+        });
+
+        return { user, organization };
+      });
+
+      return {
+        user: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          timezone: result.user.timezone,
         },
-      });
-
-      const organization = await tx.organization.create({
-        data: { name: dto.organizationName, slug },
-      });
-
-      await tx.membership.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          role: 'OWNER',
+        organization: {
+          id: result.organization.id,
+          name: result.organization.name,
+          slug: result.organization.slug,
         },
-      });
-
-      return { user, organization };
-    });
-
-    return {
-      user: {
-        id: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
-        timezone: result.user.timezone,
-      },
-      organization: {
-        id: result.organization.id,
-        name: result.organization.name,
-        slug: result.organization.slug,
-      },
-    };
+      };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'An account or organization with these details already exists',
+        );
+      }
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { memberships: true },
+      include: { memberships: { orderBy: { createdAt: 'asc' } } },
     });
 
     const invalid = new UnauthorizedException('Invalid email or password');
 
     if (!user) {
-      await bcrypt.hash(dto.password, 10);
+      await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
       throw invalid;
     }
 
@@ -108,28 +136,14 @@ export class AuthService {
       );
     }
 
-    const access_token = await this.jwt.signAsync({
-      sub: user.id,
-      orgId: membership.organizationId,
-      role: membership.role,
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: user.id, expiresAt: { lt: new Date() } },
     });
 
-    const refresh_token = await this.jwt.signAsync({
-      sub: user.id,
-      orgId: membership.organizationId,
-      role: membership.role,
-    });
-
-    await this.prisma.refreshToken.create({
-      data: {
-        token: refresh_token,
-        userId: user.id,
-      },
-    });
+    const tokens = await this.issueTokens(user.id, membership);
 
     return {
-      access_token,
-      refresh_token,
+      ...tokens,
       user: {
         id: user.id,
         name: user.name,
@@ -165,35 +179,39 @@ export class AuthService {
     };
   }
 
-  async refresh(refresh_token) {
-    const token = await this.prisma.refreshToken.findFirst({
-      where: {
-        token: refresh_token,
-      },
+  async refresh(refreshToken: string | undefined) {
+    const invalid = new UnauthorizedException(
+      'Session expired, please log in again',
+    );
+
+    if (!refreshToken) throw invalid;
+
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: hashToken(refreshToken) },
     });
 
-    if (!token) {
-      throw new NotFoundException('Inavlid Session!');
-    }
+    if (!stored || stored.expiresAt <= new Date()) throw invalid;
 
-    const user = await this.jwt.verifyAsync(token.token);
-
-    const access_token = await this.jwt.signAsync({
-      sub: user.sub,
-      orgId: user.orgId,
-      role: user.role,
+    const { count } = await this.prisma.refreshToken.deleteMany({
+      where: { id: stored.id },
     });
+    if (count === 0) throw invalid;
 
-    const new_refresh_token = await this.jwt.signAsync({
-      sub: user.sub,
-      orgId: user.orgId,
-      role: user.role,
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId: stored.userId },
+      orderBy: { createdAt: 'asc' },
     });
+    if (!membership) throw invalid;
 
-    return {
-      access_token,
-      refresh_token: new_refresh_token,
-    };
+    return this.issueTokens(stored.userId, membership);
+  }
+
+  async logout(refreshToken: string | undefined) {
+    if (!refreshToken) return;
+
+    await this.prisma.refreshToken.deleteMany({
+      where: { tokenHash: hashToken(refreshToken) },
+    });
   }
 
   async forgotPassword(email: string) {
@@ -202,49 +220,44 @@ export class AuthService {
     });
 
     if (!user) {
-      return {
-        message:
-          'If an account exists with this email, a password reset link has been sent.',
-      };
+      return { message: FORGOT_PASSWORD_MESSAGE };
     }
 
-    const resetToken = randomBytes(32).toString('hex');
+    const resetToken = generateToken();
 
-    const tokenHash = createHash('sha256').update(resetToken).digest('hex');
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.deleteMany({
+        where: { userId: user.id },
+      }),
+      this.prisma.passwordResetToken.create({
+        data: {
+          tokenHash: hashToken(resetToken),
+          userId: user.id,
+          expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+        },
+      }),
+    ]);
 
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    try {
+      await this.mailService.sendForgotPasswordEmail(
+        user.email,
+        user.name,
+        resetToken,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email to user ${user.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
 
-    await this.prisma.passwordResetToken.deleteMany({
-      where: {
-        userId: user.id,
-      },
-    });
-
-    await this.prisma.passwordResetToken.create({
-      data: {
-        tokenHash,
-        userId: user.id,
-        expiresAt,
-      },
-    });
-
-    await this.mailService.sendForgotPasswordEmail(
-      user.email,
-      user.name,
-      resetToken,
-    );
-
-    return {
-      message:
-        'If an account exists with this email, a password reset link has been sent.',
-    };
+    return { message: FORGOT_PASSWORD_MESSAGE };
   }
 
-  async resetPassword(data: { token: string; password: string }) {
-    const tokenHash = createHash('sha256').update(data.token).digest('hex');
-
+  async resetPassword(dto: ResetPasswordDto) {
     const passwordReset = await this.prisma.passwordResetToken.findUnique({
-      where: { tokenHash },
+      where: { tokenHash: hashToken(dto.token) },
+      include: { user: true },
     });
 
     if (!passwordReset || passwordReset.expiresAt <= new Date()) {
@@ -254,34 +267,61 @@ export class AuthService {
         });
       }
 
-      throw new UnauthorizedException('Invalid or expired password reset link');
+      throw new BadRequestException('Invalid or expired password reset link');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: passwordReset.userId },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid password reset request');
-    }
-
-    const passwordHash = await bcrypt.hash(data.password, 10);
+    const { user } = passwordReset;
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
         data: { passwordHash },
       }),
-
       this.prisma.passwordResetToken.delete({
         where: { id: passwordReset.id },
       }),
+
+      this.prisma.refreshToken.deleteMany({
+        where: { userId: user.id },
+      }),
     ]);
 
-    await this.mailService.sendPasswordResetSuccessEmail(user.email, user.name);
+    try {
+      await this.mailService.sendPasswordResetSuccessEmail(
+        user.email,
+        user.name,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset confirmation to user ${user.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
 
-    return {
-      message: 'Password reset successfully',
+    return { message: 'Password reset successfully' };
+  }
+
+  private async issueTokens(
+    userId: string,
+    membership: Pick<Membership, 'organizationId' | 'role'>,
+  ) {
+    const payload: JwtPayload = {
+      sub: userId,
+      orgId: membership.organizationId,
+      role: membership.role,
     };
+    const accessToken = await this.jwt.signAsync(payload);
+
+    const refreshToken = generateToken();
+    await this.prisma.refreshToken.create({
+      data: {
+        tokenHash: hashToken(refreshToken),
+        userId,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      },
+    });
+
+    return { accessToken, refreshToken };
   }
 }

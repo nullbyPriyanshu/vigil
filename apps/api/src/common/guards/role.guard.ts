@@ -6,8 +6,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from 'src/generated/prisma/enums';
-import { CurrentUserPayload } from 'src/auth/auth.guard';
+import { Role } from '../../generated/prisma/enums';
+import { CurrentUserPayload } from '../../auth/auth.guard';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()

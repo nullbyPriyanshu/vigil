@@ -13,15 +13,15 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
-import { PrismaService } from 'src/prisma.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard, CurrentUserPayload } from './auth.guard';
+import { REFRESH_TOKEN_COOKIE } from './auth.constants';
+import { clearAuthCookies, setAuthCookies } from './utils/auth-cookies';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -35,29 +35,17 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, refresh_token, ...rest } =
+    const { accessToken, refreshToken, ...rest } =
       await this.authService.login(dto);
-    res.cookie('vigil_token', access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1 * 60 * 60 * 1000,
-      path: '/',
-    });
-    res.cookie('vigil_refresh_token', refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 14 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    setAuthCookies(res, { accessToken, refreshToken });
     return rest;
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('vigil_token', { path: '/' });
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    await this.authService.logout(this.getRefreshToken(req));
+    clearAuthCookies(res);
     return { ok: true };
   }
 
@@ -68,37 +56,34 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const old_refresh_token = req.cookies?.vigil_refresh_token;
-    const { access_token, refresh_token } =
-      await this.authService.refresh(old_refresh_token);
-    res.cookie('vigil_token', access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1 * 60 * 60 * 1000,
-      path: '/',
-    });
-    res.cookie('vigil_refresh_token', refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 14 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
-    return { ok: true };
+    try {
+      const tokens = await this.authService.refresh(this.getRefreshToken(req));
+      setAuthCookies(res, tokens);
+      return { ok: true };
+    } catch (error) {
+      clearAuthCookies(res);
+      throw error;
+    }
   }
 
   @Post('forgot-password')
-  forgotPassword(@Body('email') email: string) {
-    return this.authService.forgotPassword(email);
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   @Post('reset-password')
-  resetPassword(@Body('data') data: { token: string; password: string }) {
-    return this.authService.resetPassword(data);
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  private getRefreshToken(req: Request): string | undefined {
+    return req.cookies?.[REFRESH_TOKEN_COOKIE] as string | undefined;
   }
 }

@@ -2,10 +2,23 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
+// User-provided text (like a name) must be escaped before going into HTML.
+// Otherwise a user named `<a href="evil.com">Click</a>` could inject links
+// into the emails we send.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 @Injectable()
 export class MailService {
   private readonly resend: Resend;
   private readonly from: string;
+  private readonly frontendUrl: string;
 
   constructor(private readonly configService: ConfigService) {
     this.resend = new Resend(
@@ -13,6 +26,11 @@ export class MailService {
     );
 
     this.from = this.configService.getOrThrow<string>('MAIL_FROM');
+
+    this.frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    if (!this.frontendUrl) {
+      throw new Error('FRONTEND_URL must be set (e.g. http://localhost:3000)');
+    }
   }
 
   async sendForgotPasswordEmail(
@@ -20,9 +38,7 @@ export class MailService {
     name: string,
     resetToken: string,
   ) {
-    const resetUrl = `${this.configService.getOrThrow<string>(
-      'FRONTEND_URL',
-    )}/reset-password?token=${resetToken}`;
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
     const { data, error } = await this.resend.emails.send({
       from: this.from,
@@ -102,7 +118,7 @@ export class MailService {
                         line-height: 1.6;
                         color: #a1a1aa;
                       ">
-                        Hi ${name},
+                        Hi ${escapeHtml(name)},
                       </p>
 
                       <p style="
@@ -287,7 +303,7 @@ export class MailService {
                         line-height: 1.6;
                         color: #a1a1aa;
                       ">
-                        Hi ${name},
+                        Hi ${escapeHtml(name)},
                       </p>
 
                       <p style="

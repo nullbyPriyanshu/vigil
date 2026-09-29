@@ -1,7 +1,12 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { NormalizeEmail } from './normalize-email';
 
 export class LoginDto {
-  @IsEmail() email!: string;
+  @NormalizeEmail()
+  @IsEmail()
+  email!: string;
 
-  @IsString() password!: string;
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
 }

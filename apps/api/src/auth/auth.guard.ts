@@ -6,9 +6,10 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { Role } from 'src/generated/prisma/enums';
+import { Role } from '../generated/prisma/enums';
+import { ACCESS_TOKEN_COOKIE } from './auth.constants';
 
-type JwtPayload = { sub: string; orgId: string; role: Role };
+export type JwtPayload = { sub: string; orgId: string; role: Role };
 
 export type CurrentUserPayload = {
   userId: string;
@@ -45,7 +46,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private fromCookie(request: AuthedRequest): string | undefined {
-    return request.cookies?.vigil_token as string | undefined;
+    return request.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
   }
 
   private fromHeader(request: Request): string | undefined {

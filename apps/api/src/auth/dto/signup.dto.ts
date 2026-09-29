@@ -2,28 +2,32 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsStrongPassword,
+  IsTimeZone,
+  MaxLength,
   MinLength,
 } from 'class-validator';
+import { NormalizeEmail } from './normalize-email';
+import { IsValidPassword } from './password-rules';
 
 export class SignupDto {
   @IsString()
   @MinLength(2)
+  @MaxLength(100)
   name!: string;
 
+  @NormalizeEmail()
   @IsEmail()
   email!: string;
 
-  @IsString()
-  @MinLength(6)
-  @IsStrongPassword()
+  @IsValidPassword()
   password!: string;
 
   @IsString()
   @MinLength(2)
+  @MaxLength(100)
   organizationName!: string;
 
   @IsOptional()
-  @IsString()
+  @IsTimeZone()
   timezone?: string;
 }
