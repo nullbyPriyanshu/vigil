@@ -4,3 +4,7 @@
    { available: false, slug: "acme-corp" }
 
 2. Deleting an org leaves orphaned users so we can alert them "You dont belong to any org".
+
+3. No rate limiting yet.** Someone could try many passwords quickly. Adding
+   `@nestjs/throttler` to `/login` and `/forgot-password` is the next
+   improvement.

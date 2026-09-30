@@ -2,7 +2,7 @@ export function AuthIllustration() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 overflow-hidden opacity-15 dark:opacity-25"
+      className="pointer-events-none absolute inset-0 overflow-hidden opacity-15 dark:opacity-30"
     >
       <div className="absolute top-[-10%] left-[-10%] h-[45%] w-[70%] -rotate-12 rounded-full bg-blue-600/25 blur-[120px]" />
       <div className="absolute top-[15%] right-[-15%] h-[40%] w-[75%] rotate-[-18deg] rounded-full bg-emerald-500/30 blur-[120px]" />
