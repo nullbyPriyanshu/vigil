@@ -3,9 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ChevronDown, Loader2, LogOut, UserIcon } from "lucide-react";
+import {
+  Building2Icon,
+  ChevronDown,
+  Loader2,
+  LogOut,
+  MoonIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,65 +28,37 @@ import { getApiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { Role, Session } from "@/types/auth";
 
-// One accent color per role, shared by the avatar and the role badge so the
-// two always read as a pair. Tailwind only generates classes it can see as
-// complete strings in the source, so these are spelled out in full rather
-// than built from a color name.
-const ROLE_STYLES: Record<
-  Role,
-  { label: string; avatar: string; badge: string }
-> = {
-  OWNER: {
-    label: "Owner",
-    avatar:
-      "from-amber-300 to-orange-500 text-amber-950 shadow-amber-500/30",
-    badge: "bg-amber-400/15 text-amber-600 dark:text-amber-300 ring-amber-400/25",
-  },
-  ADMIN: {
-    label: "Admin",
-    avatar: "from-violet-400 to-fuchsia-500 text-white shadow-violet-500/30",
-    badge: "bg-violet-400/15 text-violet-600 dark:text-violet-300 ring-violet-400/25",
-  },
-  RESPONDER: {
-    label: "Responder",
-    avatar:
-      "from-emerald-300 to-teal-500 text-emerald-950 shadow-emerald-500/30",
-    badge: "bg-emerald-400/15 text-emerald-600 dark:text-emerald-300 ring-emerald-400/25",
-  },
-  VIEWER: {
-    label: "Viewer",
-    avatar: "from-sky-300 to-blue-500 text-sky-950 shadow-sky-500/30",
-    badge: "bg-sky-400/15 text-sky-600 dark:text-sky-300 ring-sky-400/25",
-  },
+const ROLE_LABELS: Record<Role, string> = {
+  OWNER: "Owner",
+  ADMIN: "Admin",
+  RESPONDER: "Responder",
+  VIEWER: "Viewer",
 };
 
-function UserAvatar({
-  name,
-  role,
-  className,
-}: {
-  name: string;
-  role: Role;
-  className?: string;
-}) {
+const ITEM =
+  "cursor-pointer gap-2.5 rounded-md px-2 py-2 text-zinc-700 dark:text-zinc-300 [&_svg]:text-zinc-400 dark:[&_svg]:text-zinc-500 focus:[&_svg]:text-zinc-700 dark:focus:[&_svg]:text-zinc-200";
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
+
+function UserAvatar({ name, className }: { name: string; className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full bg-linear-to-br font-semibold shadow-lg ring-1 ring-white/25 select-none ring-inset",
-        ROLE_STYLES[role].avatar,
+        "flex shrink-0 items-center justify-center rounded-full bg-linear-to-b from-zinc-100 to-zinc-200 font-semibold text-zinc-700 ring-1 ring-black/10 select-none ring-inset dark:from-zinc-700 dark:to-zinc-800 dark:text-zinc-200 dark:ring-white/10",
         className,
       )}
     >
-      {name.charAt(0).toUpperCase()}
+      {initials(name)}
     </span>
   );
 }
 
-// The logged-in user's chip in the navbar. Clicking it opens a menu with
-// account actions and the theme switch. `variant="compact"` (the app
-// header) shows the avatar alone and moves the name/role into the
-// dropdown; `"full"` (the default) shows them inline in the trigger too.
 export function UserMenu({
   session,
   variant = "full",
@@ -91,14 +70,11 @@ export function UserMenu({
   const [loggingOut, setLoggingOut] = useState(false);
 
   const { name, email } = session.user;
-  const role = ROLE_STYLES[session.role];
   const compact = variant === "compact";
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      // On success this navigates to /login, which unmounts the menu, so
-      // there's nothing to reset on the happy path.
       await logout();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Couldn't log out. Please try again."));
@@ -110,92 +86,79 @@ export function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "group/user flex min-w-0 cursor-pointer items-center outline-none",
-          "focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+          "group/user flex min-w-0 cursor-pointer items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60",
           compact
-            ? "rounded-full transition-opacity duration-200 hover:opacity-80"
-            : cn(
-                "gap-2 rounded-full border border-zinc-300 bg-zinc-100 py-1 pr-2.5 pl-1 dark:border-zinc-800/80 dark:bg-zinc-900/50",
-                "transition-all duration-200 hover:border-zinc-400 hover:bg-zinc-200 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-900/80",
-                "data-popup-open:border-zinc-400 data-popup-open:bg-zinc-200 dark:data-popup-open:border-zinc-700/80 dark:data-popup-open:bg-zinc-900/90",
-              ),
-          "animate-in fade-in duration-300 motion-reduce:animate-none",
+            ? "ring-offset-2 ring-offset-white transition-shadow hover:ring-2 hover:ring-zinc-300 data-popup-open:ring-2 data-popup-open:ring-zinc-300 dark:ring-offset-[#09090b] dark:hover:ring-zinc-700 dark:data-popup-open:ring-zinc-700"
+            : "gap-2 py-1 pr-2 pl-1 transition-colors hover:bg-black/[0.04] data-popup-open:bg-black/[0.06] dark:hover:bg-white/[0.04] dark:data-popup-open:bg-white/[0.06]",
         )}
       >
         <UserAvatar
           name={name}
-          role={session.role}
-          className={compact ? "size-8 text-sm" : "size-7 text-xs"}
+          className={compact ? "size-8 text-xs" : "size-7 text-[11px]"}
         />
         {!compact && (
           <>
             <span className="max-w-24 truncate text-sm font-medium text-foreground sm:max-w-56">
               {name}
             </span>
-            <Badge
-              variant="secondary"
-              className={cn("ring-1 ring-inset", role.badge)}
-            >
-              {role.label}
-            </Badge>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-popup-open/user:rotate-180" />
           </>
         )}
       </DropdownMenuTrigger>
 
-      {/* No forced "dark" here — this only ever renders inside the
-          theme-aware app shell, so it follows the real site theme now. */}
-      <DropdownMenuContent align="end" sideOffset={8} className="w-60">
+      <DropdownMenuContent align="end" sideOffset={10} className="w-72 p-1.5">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex items-center gap-3 px-2 py-2">
-            <UserAvatar name={name} role={session.role} className="size-9 text-sm" />
+          <DropdownMenuLabel className="flex items-center gap-3 px-2 pt-2 pb-3 font-normal">
+            <UserAvatar name={name} className="size-10 text-sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">
-                {name}
-              </p>
-              <p className="truncate text-xs font-normal text-muted-foreground">
-                {email}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {name}
+                </p>
+                <span className="shrink-0 rounded-full border border-black/10 px-1.5 py-px text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:text-zinc-400">
+                  {ROLE_LABELS[session.role]}
+                </span>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">{email}</p>
             </div>
-            {/* Shown here always — it's the only place compact mode shows
-                the role at all, and repeating it is free in full mode. */}
-            <Badge
-              variant="secondary"
-              className={cn("shrink-0 ring-1 ring-inset", role.badge)}
-            >
-              {role.label}
-            </Badge>
           </DropdownMenuLabel>
+
+          <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-md bg-black/[0.03] px-2.5 py-2 text-xs text-zinc-600 dark:bg-white/[0.04] dark:text-zinc-400">
+            <Building2Icon className="size-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
+            <span className="min-w-0 truncate">{session.organization.name}</span>
+          </div>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem render={<Link href="/settings/profile" />} className={ITEM}>
+            <UserIcon />
+            Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/settings" />} className={ITEM}>
+            <SettingsIcon />
+            Settings
+          </DropdownMenuItem>
+
+          {/* A plain row, not a menu item: a switch inside a menuitem is invalid ARIA. */}
+          <div className="flex items-center gap-2.5 px-2 py-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <MoonIcon className="size-4 text-zinc-400 dark:text-zinc-500" />
+            <span className="flex-1">Dark mode</span>
+            <ThemeToggle />
+          </div>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          render={<Link href="/settings/profile" />}
-          className="cursor-pointer px-2 py-1.5 transition-colors duration-150"
-        >
-          <UserIcon />
-          Profile
-        </DropdownMenuItem>
-
-        {/* Not a DropdownMenuItem: a switch nested inside one is invalid
-            ARIA (menuitems are meant to be leaf, terminal controls), so
-            this is a plain row with its own layout instead. */}
-        <div className="flex items-center justify-between gap-3 px-2 py-1.5 text-sm">
-          <span className="text-foreground">Dark mode</span>
-          <ThemeToggle />
-        </div>
-
-        <DropdownMenuSeparator />
-
-        {/* Stays open while the request is in flight so the spinner is
-            visible; a failure leaves it open for a retry. */}
-        <DropdownMenuItem
-          variant="destructive"
           closeOnClick={false}
           disabled={loggingOut}
           onClick={handleLogout}
-          className="cursor-pointer px-2 py-1.5 transition-colors duration-150"
+          className={cn(
+            ITEM,
+            "focus:bg-red-500/10 focus:text-red-600 dark:focus:text-red-400 focus:[&_svg]:text-red-500",
+          )}
         >
           {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
           {loggingOut ? "Logging out..." : "Log out"}

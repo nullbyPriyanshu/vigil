@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, XIcon } from "lucide-react";
-import { OrgSwitcher } from "@/components/app-shell/org-switcher";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocalStorageState } from "@/lib/hooks/use-local-storage-state";
 import { dashboardStats } from "@/lib/mock/dashboard";
@@ -134,13 +133,6 @@ export function Sidebar({
         </div>
 
         <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {/* Locked to expanded on mobile (the drawer never collapses), so
-              this always shows in full there regardless of the desktop
-              preference. */}
-          <div className={cn(open && "lg:contents", "mb-2")}>
-            <OrgSwitcher collapsed={collapsed && !open} />
-          </div>
-
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               {!collapsed && (

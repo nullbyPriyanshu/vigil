@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MenuIcon } from "lucide-react";
 import { NotificationsBell } from "@/components/app-shell/notifications-bell";
+import { OrgSwitcher } from "@/components/app-shell/org-switcher";
 import { SearchTrigger } from "@/components/app-shell/search-trigger";
 import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/context/auth-context";
@@ -19,7 +20,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#09090b]">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
           onClick={onMenuClick}
@@ -42,6 +43,14 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
           <Image src="/logo-vigil.png" alt="" width={22} height={22} priority />
           Vigil
         </Link>
+
+        <span
+          aria-hidden
+          className="text-lg font-light text-zinc-300 select-none dark:text-zinc-700"
+        >
+          /
+        </span>
+        <OrgSwitcher />
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

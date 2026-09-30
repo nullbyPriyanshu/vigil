@@ -23,19 +23,19 @@ export function ThemeToggle() {
         toggle();
       }}
       className={cn(
-        "relative flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:outline-none",
-        isDark ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700",
+        "relative flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:outline-none",
+        isDark ? "bg-zinc-600" : "bg-zinc-300",
       )}
     >
       <span
         className={cn(
-          "relative flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ease-out",
-          isDark ? "translate-x-[22px]" : "translate-x-0.5",
+          "relative flex size-4 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ease-out",
+          isDark ? "translate-x-[18px]" : "translate-x-0.5",
         )}
       >
         <SunIcon
           className={cn(
-            "absolute size-3 text-amber-500 transition-all duration-300",
+            "absolute size-2.5 text-amber-500 transition-all duration-300",
             isDark
               ? "rotate-90 scale-0 opacity-0"
               : "rotate-0 scale-100 opacity-100",
@@ -43,7 +43,7 @@ export function ThemeToggle() {
         />
         <MoonIcon
           className={cn(
-            "absolute size-3 text-zinc-700 transition-all duration-300",
+            "absolute size-2.5 text-zinc-700 transition-all duration-300",
             isDark
               ? "rotate-0 scale-100 opacity-100"
               : "-rotate-90 scale-0 opacity-0",
