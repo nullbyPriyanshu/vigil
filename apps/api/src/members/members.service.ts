@@ -107,7 +107,7 @@ export class MembersService {
 
   // The role inside the login token can be up to an hour old, so read the
   // caller's real role from the database before letting them change anyone.
-  private async assertCanManageMembers(userId: string, organizationId: string) {
+  async assertCanManageMembers(userId: string, organizationId: string) {
     const membership = await this.prisma.membership.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
     });

@@ -197,13 +197,33 @@ export class AuthService {
     });
     if (count === 0) throw invalid;
 
-    const membership = await this.prisma.membership.findFirst({
-      where: { userId: stored.userId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const membership = await this.findSessionMembership(
+      stored.userId,
+      stored.organizationId,
+    );
     if (!membership) throw invalid;
 
     return this.issueTokens(stored.userId, membership);
+  }
+
+  // A session stays in the organization it was started for. Older sessions
+  // (and anyone no longer in that organization) fall back to the user's
+  // first organization.
+  private async findSessionMembership(
+    userId: string,
+    organizationId: string | null,
+  ) {
+    if (organizationId) {
+      const membership = await this.prisma.membership.findUnique({
+        where: { userId_organizationId: { userId, organizationId } },
+      });
+      if (membership) return membership;
+    }
+
+    return this.prisma.membership.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 
   async logout(refreshToken: string | undefined) {
@@ -302,7 +322,9 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  private async issueTokens(
+  // Public so other modules can start a session too (accepting an
+  // invitation logs the person straight into the organization they joined).
+  async issueTokens(
     userId: string,
     membership: Pick<Membership, 'organizationId' | 'role'>,
   ) {
@@ -318,6 +340,7 @@ export class AuthService {
       data: {
         tokenHash: hashToken(refreshToken),
         userId,
+        organizationId: membership.organizationId,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       },
     });

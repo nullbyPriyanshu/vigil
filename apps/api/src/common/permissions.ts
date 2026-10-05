@@ -13,3 +13,10 @@ export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 export function canManageMembers(role: Role): boolean {
   return role === 'OWNER' || role === 'ADMIN';
 }
+
+export const ROLE_LABELS: Record<Role, string> = {
+  OWNER: 'Owner',
+  ADMIN: 'Admin',
+  RESPONDER: 'Responder',
+  VIEWER: 'Viewer',
+};

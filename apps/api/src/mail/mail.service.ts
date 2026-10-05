@@ -5,6 +5,7 @@ import { PASSWORD_RESET_TTL_MS } from 'src/auth/auth.constants';
 import {
   type Email,
   forgotPasswordEmail,
+  invitationEmail,
   passwordChangedEmail,
   passwordResetEmail,
 } from './templates';
@@ -72,6 +73,28 @@ export class MailService {
         name,
         changedAt: formatNow(timezone),
         forgotUrl: this.forgotUrl(),
+      }),
+    );
+  }
+
+  sendInvitationEmail(
+    email: string,
+    opts: {
+      inviterName: string;
+      organizationName: string;
+      roleLabel: string;
+      token: string;
+      expiresInDays: number;
+    },
+  ) {
+    return this.send(
+      email,
+      invitationEmail({
+        inviterName: opts.inviterName,
+        organizationName: opts.organizationName,
+        roleLabel: opts.roleLabel,
+        acceptUrl: `${this.frontendUrl}/invite/${opts.token}`,
+        expiresInDays: opts.expiresInDays,
       }),
     );
   }

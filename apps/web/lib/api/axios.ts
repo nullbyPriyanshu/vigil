@@ -16,6 +16,12 @@ const NO_REFRESH_URLS = [
   "/auth/reset-password",
 ];
 
+// A 401 from these means "wrong password" or "log in first", not "your
+// access token expired", so there's nothing a refresh could fix.
+function skipsRefresh(url: string) {
+  return NO_REFRESH_URLS.includes(url) || url.startsWith("/invitations/");
+}
+
 type RetryableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
 
 let refreshPromise: Promise<unknown> | null = null;
@@ -37,7 +43,7 @@ api.interceptors.response.use(
       is401 &&
       config &&
       !config._retried &&
-      !NO_REFRESH_URLS.includes(config.url ?? "")
+      !skipsRefresh(config.url ?? "")
     ) {
       config._retried = true;
       try {
@@ -47,7 +53,9 @@ api.interceptors.response.use(
       }
     }
 
-    const onAuthPage = AUTH_PAGES.includes(window.location.pathname);
+    const onAuthPage =
+      AUTH_PAGES.includes(window.location.pathname) ||
+      window.location.pathname.startsWith("/invite/");
     const isMeCall = config?.url === "/auth/me";
     const isRefreshCall = config?.url === "/auth/refresh";
 

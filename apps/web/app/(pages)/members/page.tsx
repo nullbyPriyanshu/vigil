@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PencilIcon } from "lucide-react";
 
+import { InviteMemberDialog } from "@/components/members/invite-member-dialog";
 import { ManageMemberDialog } from "@/components/members/manage-member-dialog";
+import { PendingInvitations } from "@/components/members/pending-invitations";
 import { RemoveMemberDialog } from "@/components/members/remove-member-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -45,6 +47,7 @@ export default function MembersPage() {
       <PageHeader
         title="Members"
         description="Everyone in your organization and what they're allowed to do."
+        action={canManage ? <InviteMemberDialog /> : undefined}
       />
 
       <div className="overflow-hidden rounded-xl border border-black/[0.08] dark:border-white/[0.08]">
@@ -141,6 +144,8 @@ export default function MembersPage() {
           {!canManage && " · Only owners and admins can make changes."}
         </p>
       )}
+
+      {canManage && <PendingInvitations />}
 
       {managing && (
         <ManageMemberDialog

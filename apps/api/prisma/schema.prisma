@@ -30,16 +30,21 @@ model User {
 
   refreshTokens RefreshToken[]
   passwordResets PasswordResetToken[]
+  sentInvitations Invitation[]
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   tokenHash String   @unique
   userId    String
+  // Which organization this session is for. Empty on sessions created
+  // before this column existed; those fall back to the user's first org.
+  organizationId String?
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -66,6 +71,8 @@ model Organization {
   onboardingCompletedAt DateTime?
 
   memberships  Membership[]
+  refreshTokens RefreshToken[]
+  invitations  Invitation[]
 }
 
 model Membership {
@@ -81,4 +88,26 @@ model Membership {
   createdAt      DateTime     @default(now())
 
   @@unique([userId, organizationId])
+}
+
+// An emailed link that lets someone join an organization. Like the other
+// tokens, only a hash of the link's token is stored.
+model Invitation {
+  id         String    @id @default(uuid())
+  email      String
+  role       Role
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invitedById String
+  invitedBy   User   @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
 }

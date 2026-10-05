@@ -33,10 +33,13 @@ function createPrismaMock() {
   return {
     user: { findUnique: jest.fn(), update: jest.fn() },
     organization: { findUnique: jest.fn() },
-    membership: { findFirst: jest.fn() },
+    membership: { findFirst: jest.fn(), findUnique: jest.fn() },
     refreshToken: {
       findUnique: jest.fn(),
-      create: jest.fn<unknown, [{ data: { tokenHash: string } }]>(),
+      create: jest.fn<
+        unknown,
+        [{ data: { tokenHash: string; organizationId?: string } }]
+      >(),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     passwordResetToken: {
@@ -221,6 +224,44 @@ describe('AuthService', () => {
       const saved = prisma.refreshToken.create.mock.calls[0][0];
       expect(saved.data.tokenHash).toBe(hashToken(tokens.refreshToken));
       expect(tokens.refreshToken).not.toEqual('valid');
+    });
+
+    it('keeps the session in the organization it was started for', async () => {
+      prisma.refreshToken.findUnique.mockResolvedValue({
+        id: 'r1',
+        userId: 'u1',
+        organizationId: 'o2',
+        expiresAt: future(),
+      });
+      prisma.membership.findUnique.mockResolvedValue({
+        organizationId: 'o2',
+        role: 'RESPONDER',
+      });
+
+      await service.refresh('valid');
+
+      expect(prisma.membership.findFirst).not.toHaveBeenCalled();
+      const saved = prisma.refreshToken.create.mock.calls[0][0];
+      expect(saved.data.organizationId).toBe('o2');
+    });
+
+    it('falls back to the first organization if they left that one', async () => {
+      prisma.refreshToken.findUnique.mockResolvedValue({
+        id: 'r1',
+        userId: 'u1',
+        organizationId: 'o2',
+        expiresAt: future(),
+      });
+      prisma.membership.findUnique.mockResolvedValue(null);
+      prisma.membership.findFirst.mockResolvedValue({
+        organizationId: 'o1',
+        role: 'OWNER',
+      });
+
+      await service.refresh('valid');
+
+      const saved = prisma.refreshToken.create.mock.calls[0][0];
+      expect(saved.data.organizationId).toBe('o1');
     });
   });
 

@@ -152,3 +152,53 @@ export function passwordChangedEmail(opts: {
     forgotUrl: opts.forgotUrl,
   });
 }
+
+export function invitationEmail(opts: {
+  inviterName: string;
+  organizationName: string;
+  roleLabel: string;
+  acceptUrl: string;
+  expiresInDays: number;
+}): Email {
+  const inviter = escapeHtml(opts.inviterName);
+  const organization = escapeHtml(opts.organizationName);
+  // Organization names are user-provided, so the subject uses the raw text
+  // (subjects aren't HTML) and the body uses the escaped one.
+  const subject = `${opts.inviterName} invited you to ${opts.organizationName} on Vigil`;
+
+  const html = layout(
+    escapeHtml(subject),
+    [
+      p('Hi,'),
+      p(
+        `${inviter} invited you to join <strong>${organization}</strong> on Vigil as ${
+          /^[aeiou]/i.test(opts.roleLabel) ? 'an' : 'a'
+        } ${opts.roleLabel.toLowerCase()}.`,
+      ),
+      button(opts.acceptUrl, 'Accept invitation'),
+      p(
+        `Or paste this link into your browser:<br /><a href="${opts.acceptUrl}" style="color:#52525b;word-break:break-all;">${opts.acceptUrl}</a>`,
+        '#52525b',
+      ),
+      p(
+        `This invitation expires in ${opts.expiresInDays} days. If you weren't expecting it, you can ignore this email.`,
+        '#71717a',
+      ),
+    ].join(''),
+  );
+
+  const text = `Hi,
+
+${opts.inviterName} invited you to join ${opts.organizationName} on Vigil as ${
+    /^[aeiou]/i.test(opts.roleLabel) ? 'an' : 'a'
+  } ${opts.roleLabel.toLowerCase()}.
+
+Accept the invitation:
+${opts.acceptUrl}
+
+This invitation expires in ${opts.expiresInDays} days. If you weren't expecting it, you can ignore this email.
+
+Vigil`;
+
+  return { subject, html, text };
+}

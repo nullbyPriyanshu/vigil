@@ -25,6 +25,6 @@ import { ACCESS_TOKEN_TTL_MS } from './auth.constants';
   controllers: [AuthController],
   providers: [AuthService],
   // Other modules that use @UseGuards(AuthGuard) need JwtService.
-  exports: [JwtModule],
+  exports: [JwtModule, AuthService],
 })
 export class AuthModule {}
