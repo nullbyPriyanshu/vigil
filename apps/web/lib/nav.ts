@@ -1,10 +1,14 @@
 import {
+  ArrowLeftIcon,
   BarChart3Icon,
   BoxesIcon,
+  Building2Icon,
   CalendarClockIcon,
   LayoutDashboardIcon,
+  PaletteIcon,
   SettingsIcon,
   SirenIcon,
+  UserIcon,
   UsersIcon,
   WorkflowIcon,
   type LucideIcon,
@@ -54,6 +58,29 @@ export const SETTINGS_NAV_ITEM: NavItem = {
   label: "Settings",
   href: "/settings",
   icon: SettingsIcon,
+};
+
+// What the sidebar shows instead of NAV_GROUPS on any /settings/* page.
+// Add a new settings page by adding one line here (and its page.tsx).
+export const SETTINGS_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Settings",
+    items: [
+      { label: "Profile", href: "/settings/profile", icon: UserIcon },
+      {
+        label: "Your organization",
+        href: "/settings/organization",
+        icon: Building2Icon,
+      },
+      { label: "Appearance", href: "/settings/appearance", icon: PaletteIcon },
+    ],
+  },
+];
+
+export const BACK_TO_APP_NAV_ITEM: NavItem = {
+  label: "Back to dashboard",
+  href: "/dashboard",
+  icon: ArrowLeftIcon,
 };
 
 // Flattened, including Settings — for anything that just needs to look up

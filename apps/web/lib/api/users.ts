@@ -8,12 +8,12 @@ export type Profile = {
   createdAt: string;
 };
 
-export const getProfileApi = () => api.get<Profile>("/users/me");
+export const getProfileApi = () => api.get<Profile>("/user/profile");
 
 export const updateProfileApi = (data: { name?: string; timezone?: string }) =>
-  api.patch<Profile>("/users/me", data);
+  api.patch<Profile>("/user/profile", data);
 
 export const changePasswordApi = (data: {
   currentPassword: string;
   newPassword: string;
-}) => api.patch<{ message: string }>("/users/me/password", data);
+}) => api.patch<{ message: string }>("/user/profile/update-password", data);

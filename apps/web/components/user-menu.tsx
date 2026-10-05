@@ -9,7 +9,6 @@ import {
   Loader2,
   LogOut,
   MoonIcon,
-  SettingsIcon,
   UserIcon,
 } from "lucide-react";
 
@@ -122,11 +121,6 @@ export function UserMenu({
               <p className="truncate text-xs text-muted-foreground">{email}</p>
             </div>
           </DropdownMenuLabel>
-
-          <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-md bg-black/[0.03] px-2.5 py-2 text-xs text-zinc-600 dark:bg-white/[0.04] dark:text-zinc-400">
-            <Building2Icon className="size-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
-            <span className="min-w-0 truncate">{session.organization.name}</span>
-          </div>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
@@ -136,9 +130,15 @@ export function UserMenu({
             <UserIcon />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/settings" />} className={ITEM}>
-            <SettingsIcon />
-            Settings
+          <DropdownMenuItem
+            render={<Link href="/settings/organization" />}
+            className={ITEM}
+          >
+            <Building2Icon />
+            Your organization
+            {/* <span className="ml-auto max-w-24 truncate pl-2 text-xs text-muted-foreground">
+              {session.organization.name}
+            </span> */}
           </DropdownMenuItem>
 
           {/* A plain row, not a menu item: a switch inside a menuitem is invalid ARIA. */}

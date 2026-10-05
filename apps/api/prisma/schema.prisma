@@ -63,6 +63,7 @@ model Organization {
   name         String       @unique
   slug         String       @unique
   createdAt    DateTime     @default(now())
+  onboardingCompletedAt DateTime?
 
   memberships  Membership[]
 }

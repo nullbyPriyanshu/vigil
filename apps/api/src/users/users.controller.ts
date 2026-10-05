@@ -17,17 +17,17 @@ import { UpdateUserPasswordDto } from './dto/updateUserPassword.dto';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-@Controller('users')
+@Controller('user')
 @UseGuards(AuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('me')
+  @Get('profile')
   getUserProfile(@Req() req: AuthedRequest) {
     return this.usersService.getUserProfile(req.user.userId);
   }
 
-  @Patch('me')
+  @Patch('profile')
   updateUserProfile(
     @Req() req: AuthedRequest,
     @Body() dto: UpdateUserProfileDto,
@@ -35,7 +35,7 @@ export class UsersController {
     return this.usersService.updateUserProfile(req.user.userId, dto);
   }
 
-  @Patch('me/password')
+  @Patch('profile/update-password')
   @HttpCode(HttpStatus.OK)
   updateUserPassword(
     @Req() req: AuthedRequest,

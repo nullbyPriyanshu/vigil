@@ -6,7 +6,13 @@ import { PanelLeftCloseIcon, PanelLeftOpenIcon, XIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocalStorageState } from "@/lib/hooks/use-local-storage-state";
 import { dashboardStats } from "@/lib/mock/dashboard";
-import { NAV_GROUPS, SETTINGS_NAV_ITEM, type NavItem } from "@/lib/nav";
+import {
+  BACK_TO_APP_NAV_ITEM,
+  NAV_GROUPS,
+  SETTINGS_NAV_GROUPS,
+  SETTINGS_NAV_ITEM,
+  type NavItem,
+} from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 // Primary nav, shared by every authenticated page via (pages)/layout.tsx.
@@ -31,6 +37,11 @@ export function Sidebar({
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
+
+  // Inside settings, this same sidebar shows the settings pages instead of
+  // the main navigation, so there's only ever one menu on screen.
+  const inSettings = isActive(SETTINGS_NAV_ITEM.href);
+  const groups = inSettings ? SETTINGS_NAV_GROUPS : NAV_GROUPS;
 
   // A count badge only exists for Incidents today (it's the one number the
   // rest of the app already has on hand via the dashboard's mock stats).
@@ -133,7 +144,12 @@ export function Sidebar({
         </div>
 
         <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {NAV_GROUPS.map((group) => (
+          {inSettings && (
+            <div className="mb-3 border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
+              {renderItem(BACK_TO_APP_NAV_ITEM)}
+            </div>
+          )}
+          {groups.map((group) => (
             <div key={group.label}>
               {!collapsed && (
                 <p className="mt-4 mb-1 px-3 text-[11px] font-medium tracking-wider text-zinc-500 uppercase first:mt-0">
@@ -151,7 +167,7 @@ export function Sidebar({
 
         {/* Pinned to the bottom: Settings, then the collapse toggle. */}
         <div className="space-y-1 border-t border-black/[0.06] p-3 transition-colors duration-300 dark:border-white/[0.06]">
-          {renderItem(SETTINGS_NAV_ITEM)}
+          {!inSettings && renderItem(SETTINGS_NAV_ITEM)}
 
           <button
             type="button"

@@ -2,8 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { PageHeader } from "@/components/shared/page-header";
-import { SettingsSection } from "@/components/settings/settings-section";
+import {
+  SettingsPageTitle,
+  SettingsSection,
+} from "@/components/settings/settings-section";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,8 +27,8 @@ export default function ProfileSettingsPage() {
   });
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
+    <div>
+      <SettingsPageTitle
         title="Profile"
         description="Your name, timezone and password."
       />

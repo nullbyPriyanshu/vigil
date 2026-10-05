@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -50,10 +50,10 @@ export function PasswordForm() {
     resolver: zodResolver(passwordFormSchema),
     defaultValues: EMPTY,
   });
-  const currentPassword = useWatch({
-    control: form.control,
-    name: "currentPassword",
-  });
+  // const currentPassword = useWatch({
+  //   control: form.control,
+  //   name: "currentPassword",
+  // });
 
   const mutation = useMutation({
     mutationFn: async (values: PasswordFormValues) =>
@@ -148,7 +148,7 @@ export function PasswordForm() {
           <Button
             type="submit"
             variant="outline"
-            disabled={!currentPassword || mutation.isPending}
+            disabled={mutation.isPending}
             className="h-9 px-4"
           >
             {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
