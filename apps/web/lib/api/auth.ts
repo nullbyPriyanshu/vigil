@@ -21,3 +21,7 @@ export const forgotPasswordApi = (email: string) =>
 
 export const resetPasswordApi = (token: string, password: string) =>
   api.post<{ message: string }>("/auth/reset-password", { token, password });
+
+// Swaps the session cookies for fresh ones. Call after something changed
+// the user's role, so the new login token carries the new role.
+export const refreshSessionApi = () => api.post("/auth/refresh");

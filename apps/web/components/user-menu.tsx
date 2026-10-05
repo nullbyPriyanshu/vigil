@@ -21,42 +21,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { ROLE_LABELS } from "@/lib/roles";
 import { cn } from "@/lib/utils";
-import type { Role, Session } from "@/types/auth";
-
-const ROLE_LABELS: Record<Role, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  RESPONDER: "Responder",
-  VIEWER: "Viewer",
-};
+import type { Session } from "@/types/auth";
 
 const ITEM =
   "cursor-pointer gap-2.5 rounded-md px-2 py-2 text-zinc-700 dark:text-zinc-300 [&_svg]:text-zinc-400 dark:[&_svg]:text-zinc-500 focus:[&_svg]:text-zinc-700 dark:focus:[&_svg]:text-zinc-200";
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase();
-}
-
-function UserAvatar({ name, className }: { name: string; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full bg-linear-to-b from-zinc-100 to-zinc-200 font-semibold text-zinc-700 ring-1 ring-black/10 select-none ring-inset dark:from-zinc-700 dark:to-zinc-800 dark:text-zinc-200 dark:ring-white/10",
-        className,
-      )}
-    >
-      {initials(name)}
-    </span>
-  );
-}
 
 export function UserMenu({
   session,

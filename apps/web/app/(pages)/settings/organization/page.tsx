@@ -8,7 +8,7 @@ import {
 } from "@/components/settings/settings-section";
 import { OrganizationForm } from "@/components/settings/organization-form";
 import { DeleteOrganizationDialog } from "@/components/settings/delete-organization-dialog";
-import { Button } from "@/components/ui/button";
+import { TransferOwnershipDialog } from "@/components/settings/transfer-ownership-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { getOrganizationApi } from "@/lib/api/organization";
@@ -83,11 +83,9 @@ export default function OrganizationSettingsPage() {
                     : "Make another member the owner. You'll become an admin."
                 }
               >
-                {/* Needs a list of members to pick from, which arrives with
-                    the members API. transferOwnershipApi is ready for it. */}
-                <Button variant="outline" disabled className="h-9 px-4">
-                  Transfer
-                </Button>
+                <TransferOwnershipDialog
+                  disabled={organization.memberCount < 2}
+                />
               </DangerRow>
 
               <DangerRow

@@ -10,6 +10,7 @@ import {
   SirenIcon,
   UserIcon,
   UsersIcon,
+  UsersRoundIcon,
   WorkflowIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -48,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Organization",
     items: [
+      { label: "Members", href: "/members", icon: UsersRoundIcon },
       { label: "Teams", href: "/teams", icon: UsersIcon },
       { label: "Analytics", href: "/analytics", icon: BarChart3Icon },
     ],
