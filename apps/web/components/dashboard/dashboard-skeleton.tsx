@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Fixed pixel heights matching WeeklyIncidentsChart's own sizing, so the
 // skeleton's bars sit exactly where the real bars will render — see that
 // component for why pixels are used instead of percentage heights.
-const CHART_ROW_HEIGHT = 108;
-const BAR_HEIGHTS = [40, 55, 35, 62, 88, 20, 30];
+const CHART_ROW_HEIGHT = 200;
+const BAR_HEIGHTS = [70, 105, 62, 123, 167, 35, 53];
 
 // Mirrors the real dashboard's layout piece for piece (four stat cards, the
 // on-call/weekly-chart row, the open-incidents list) so nothing shifts or
@@ -23,29 +23,17 @@ export function DashboardSkeleton() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
-            <CardContent className="flex items-center gap-4">
-              <Skeleton className="size-11 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-7 w-16" />
-                <Skeleton className="h-3 w-20" />
-              </div>
+            <CardContent>
+              <Skeleton className="size-9 rounded-lg" />
+              <Skeleton className="mt-4 h-7 w-20" />
+              <Skeleton className="mt-2 h-4 w-28" />
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-5 w-36" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-14 w-full rounded-lg" />
-            <Skeleton className="h-14 w-full rounded-lg" />
-          </CardContent>
-        </Card>
-
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <Skeleton className="h-5 w-40" />
           </CardHeader>
@@ -69,6 +57,18 @@ export function DashboardSkeleton() {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </CardContent>
+        </Card>
+
       </div>
 
       <Card>

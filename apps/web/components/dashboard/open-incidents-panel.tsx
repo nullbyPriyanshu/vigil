@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRightIcon } from "lucide-react";
 import {
   Card,
   CardAction,
@@ -12,7 +14,7 @@ import type { IncidentSummary } from "@/types/incident";
 // design doesn't have to change when the real feed lands.
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
       <span className="relative flex size-1.5">
         <span className="absolute inline-flex size-full rounded-full bg-emerald-400/70 motion-safe:animate-ping" />
         <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
@@ -30,9 +32,16 @@ export function OpenIncidentsPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Open Incidents List</CardTitle>
-        <CardAction>
+        <CardTitle>Open incidents</CardTitle>
+        <CardAction className="flex items-center gap-3">
           <LiveBadge />
+          <Link
+            href="/incidents"
+            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            View all
+            <ArrowRightIcon className="size-3" />
+          </Link>
         </CardAction>
       </CardHeader>
 

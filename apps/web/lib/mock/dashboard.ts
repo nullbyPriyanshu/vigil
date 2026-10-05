@@ -17,6 +17,14 @@ export const dashboardStats = {
   mttaSeconds: 4 * 60 + 12,
   mttr: "38m",
   mttrSeconds: 38 * 60,
+  // Percent change against the previous 7 days. Negative means it went
+  // down, which is the good direction for every one of these numbers.
+  trends: {
+    activeAlerts: -40,
+    openIncidents: -20,
+    mtta: -32,
+    mttr: 12,
+  },
 };
 
 export type OnCallEntry = {
@@ -26,8 +34,10 @@ export type OnCallEntry = {
 };
 
 export const onCallNow: OnCallEntry[] = [
-  { team: "Platform Team", user: "Priyanshu M.", until: "Mon 10:00 IST" },
-  { team: "Payments Team", user: "Sneha K.", until: "Mon 10:00 IST" },
+  { team: "Platform Team", user: "Priyanshu Maurya", until: "Mon 10:00" },
+  { team: "Payments Team", user: "Sneha Kapoor", until: "Mon 10:00" },
+  { team: "Infrastructure", user: "Rahul Verma", until: "Tue 09:00" },
+  { team: "Customer Support", user: "Aman Gupta", until: "Wed 18:00" },
 ];
 
 export type DayCount = { day: string; count: number };

@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { OnCallEntry } from "@/lib/mock/dashboard";
 
@@ -8,33 +9,39 @@ export function OnCallPanel({ entries }: { entries: OnCallEntry[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>On Call Right Now</CardTitle>
+        <CardTitle>On call now</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent>
         {entries.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Nobody is on call. Create a schedule so incidents have somewhere
             to route.
           </p>
         ) : (
-          entries.map((entry) => (
-            <div
-              key={entry.team}
-              className="flex items-center justify-between gap-3 rounded-lg border border-black/[0.08] bg-black/[0.015] px-3 py-2.5 transition-colors duration-300 dark:border-white/[0.08] dark:bg-white/[0.02]"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {entry.team}
+          <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+            {entries.map((entry) => (
+              <li
+                key={entry.team}
+                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <UserAvatar name={entry.user} className="size-9 text-xs" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {entry.user}
+                  </p>
+                  <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                    {entry.team}
+                  </p>
+                </div>
+                <p className="shrink-0 text-right text-xs text-zinc-500">
+                  until
+                  <span className="block text-zinc-700 dark:text-zinc-300">
+                    {entry.until}
+                  </span>
                 </p>
-                <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-                  {entry.user}
-                </p>
-              </div>
-              <p className="shrink-0 text-xs whitespace-nowrap text-zinc-500">
-                until {entry.until}
-              </p>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>

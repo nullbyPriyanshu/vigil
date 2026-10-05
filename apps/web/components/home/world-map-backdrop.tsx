@@ -134,8 +134,12 @@ export function WorldMapBackdrop({
   className,
   camera,
   stops = DEFAULT_STOPS,
+  emphasis = 1,
 }: {
   className?: string;
+  // Multiplies how visible the land dots and resting routes are. 1 suits a
+  // backdrop behind text; raise it where the map is the picture itself.
+  emphasis?: number;
   camera?: RefObject<MapCamera>;
   // Keep this referentially stable (a module constant): it's an effect
   // dependency.
@@ -156,7 +160,7 @@ export function WorldMapBackdrop({
     ).matches;
 
     const dotRGB = isDark ? "255,255,255" : "15,15,17";
-    const dotAlpha = isDark ? 0.14 : 0.16;
+    const dotAlpha = (isDark ? 0.14 : 0.16) * emphasis;
     // emerald-400 / emerald-500, the app's accent.
     const accentRGB = isDark ? "52,211,153" : "16,185,129";
 
@@ -334,7 +338,7 @@ export function WorldMapBackdrop({
         const w = Math.max(focusWeight(arc.from), focusWeight(arc.to));
         const dim = 1 + m * (w * 1.35 - 0.75);
 
-        ctx.strokeStyle = `rgba(${accentRGB},${(isDark ? 0.07 : 0.1) * dim})`;
+        ctx.strokeStyle = `rgba(${accentRGB},${(isDark ? 0.07 : 0.1) * emphasis * dim})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -473,7 +477,7 @@ export function WorldMapBackdrop({
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
     };
-  }, [isDark, camera, stops]);
+  }, [isDark, camera, stops, emphasis]);
 
   return (
     <canvas
