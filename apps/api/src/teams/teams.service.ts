@@ -34,7 +34,10 @@ export class TeamsService {
   async listTeams(organizationId: string) {
     const teams = await this.prisma.team.findMany({
       where: { organizationId },
-      include: { members: { include: { user: true } } },
+      include: {
+        members: { include: { user: true } },
+        _count: { select: { services: true } },
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -49,8 +52,7 @@ export class TeamsService {
           name: team.name,
           slug: team.slug,
           memberCount: people.length,
-          // TODO (services): count the team's services once they exist.
-          serviceCount: 0,
+          serviceCount: team._count.services,
           members: people.slice(0, MEMBER_PREVIEW_SIZE).map((user) => ({
             userId: user.id,
             name: user.name,
@@ -87,8 +89,8 @@ export class TeamsService {
       name: team.name,
       slug: team.slug,
       members,
-      // TODO (services, schedules): fill these in once those exist.
-      services: [] as { id: string; name: string }[],
+      services: await this.findTeamServices(team.id),
+      // TODO (schedules): fill this in once schedules exist.
       schedules: [] as { id: string; name: string }[],
     };
   }
@@ -156,10 +158,17 @@ export class TeamsService {
     );
     const team = await this.findTeamOrThrow(organizationId, teamId);
 
-    // TODO (services, schedules): once those exist, refuse with a 409 while
-    // any still belong to this team, e.g.
-    //   throw new ConflictException({ message: 'Team owns 2 services', services })
-    // so nothing is left without an owner.
+    // A service must always have a team, so a team that still owns some
+    // can't be deleted. The response lists the services to move first.
+    const services = await this.findTeamServices(team.id);
+    if (services.length > 0) {
+      throw new ConflictException({
+        message: `Team owns ${services.length} ${services.length === 1 ? 'service' : 'services'}`,
+        services,
+      });
+    }
+
+    // TODO (schedules): the same check for schedules, once they exist.
 
     // The team's member rows go with it (onDelete: Cascade in the schema).
     await this.prisma.team.delete({ where: { id: team.id } });
@@ -245,6 +254,14 @@ export class TeamsService {
     }
 
     return team;
+  }
+
+  private findTeamServices(teamId: string) {
+    return this.prisma.service.findMany({
+      where: { teamId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   // Turns a name into a slug and makes sure no other team in the

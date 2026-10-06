@@ -134,9 +134,14 @@ export class OrganizationService {
         'The name you typed does not match the organization name',
       );
     }
-    await this.prisma.organization.delete({
-      where: { id: organizationId },
-    });
+    // Everything else that belongs to the organization is removed with it
+    // automatically (onDelete: Cascade in the schema). Services go first,
+    // by hand, because a service holds on to its team and policy: with them
+    // out of the way, nothing can block the rest.
+    await this.prisma.$transaction([
+      this.prisma.service.deleteMany({ where: { organizationId } }),
+      this.prisma.organization.delete({ where: { id: organizationId } }),
+    ]);
   }
 
   async completeOnboarding(organizationId: string) {

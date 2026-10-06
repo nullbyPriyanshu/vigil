@@ -9,6 +9,11 @@ import { UsersModule } from './users/users.module';
 import { MembersModule } from './members/members.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { TeamsModule } from './teams/teams.module';
+import { EscalationPoliciesModule } from './escalation-policies/escalation-policies.module';
+import { ServicesModule } from './services/services.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { IncidentsModule } from './incidents/incidents.module';
 
 @Module({
   imports: [
@@ -20,6 +25,11 @@ import { TeamsModule } from './teams/teams.module';
     MembersModule,
     InvitationsModule,
     TeamsModule,
+    EscalationPoliciesModule,
+    ServicesModule,
+    ApiKeysModule,
+    AlertsModule,
+    IncidentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

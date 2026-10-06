@@ -20,3 +20,9 @@ export const ROLE_LABELS: Record<Role, string> = {
   RESPONDER: 'Responder',
   VIEWER: 'Viewer',
 };
+
+// Who is allowed to acknowledge, resolve and comment on incidents.
+// Viewers can only look.
+export function canRespond(role: Role): boolean {
+  return role !== 'VIEWER';
+}

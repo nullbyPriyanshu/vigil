@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, XIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocalStorageState } from "@/lib/hooks/use-local-storage-state";
-import { dashboardStats } from "@/lib/mock/dashboard";
+import { getIncidentsApi } from "@/lib/api/incidents";
 import {
   BACK_TO_APP_NAV_ITEM,
   NAV_GROUPS,
@@ -43,12 +44,20 @@ export function Sidebar({
   const inSettings = isActive(SETTINGS_NAV_ITEM.href);
   const groups = inSettings ? SETTINGS_NAV_GROUPS : NAV_GROUPS;
 
-  // A count badge only exists for Incidents today (it's the one number the
-  // rest of the app already has on hand via the dashboard's mock stats).
+  // How many incidents are waiting for someone to acknowledge them. Asked
+  // for one row only, since the total is all that's needed here.
+  const { data: triggeredCount } = useQuery({
+    queryKey: ["incidents", "triggered-count"],
+    queryFn: async () =>
+      (await getIncidentsApi({ status: "TRIGGERED", pageSize: 1 })).data.meta
+        .total,
+    refetchInterval: 30 * 1000,
+  });
+
   // Collapsed mode has no room for the badge itself, so its count folds
   // into the tooltip text instead.
   const badgeFor = (item: NavItem) =>
-    item.href === "/incidents" ? dashboardStats.openIncidents : null;
+    item.href === "/incidents" && triggeredCount ? triggeredCount : null;
 
   const renderItem = (item: NavItem) => {
     const active = isActive(item.href);

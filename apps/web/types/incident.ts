@@ -1,6 +1,4 @@
-// Mirrors the Prisma enums the API will expose (see the Incident model in
-// the build plan, day 22). Keeping these in sync now means the dashboard's
-// mock data already has the exact shape the real API response will have.
+// The same values as the API's Severity and IncidentStatus enums.
 export type Severity = "CRITICAL" | "HIGH" | "LOW";
 
 export type IncidentStatus = "TRIGGERED" | "ACKNOWLEDGED" | "RESOLVED";

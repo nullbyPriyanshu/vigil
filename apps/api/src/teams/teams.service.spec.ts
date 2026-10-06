@@ -20,6 +20,7 @@ function createPrismaMock() {
       delete: jest.fn(),
     },
     teamMember: { upsert: jest.fn(), deleteMany: jest.fn() },
+    service: { findMany: jest.fn().mockResolvedValue([]) },
     membership: {
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn(),
@@ -63,6 +64,7 @@ describe('TeamsService', () => {
       prisma.team.findMany.mockResolvedValue([
         {
           ...TEAM,
+          _count: { services: 2 },
           members: [
             person('u2', 'Sneha Kapoor'),
             person('u1', 'Rahul Verma'),
@@ -81,7 +83,7 @@ describe('TeamsService', () => {
         name: 'Platform Team',
         slug: 'platform-team',
         memberCount: 6,
-        serviceCount: 0,
+        serviceCount: 2,
       });
       // Five at most, in name order.
       expect(data[0].members.map((m) => m.initials)).toEqual([
@@ -253,6 +255,28 @@ describe('TeamsService', () => {
       await expect(
         service.deleteTeam('u1', 'o1', 't-other'),
       ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.team.delete).not.toHaveBeenCalled();
+    });
+
+    it('gives 409 and lists the services while the team still owns some', async () => {
+      prisma.team.findFirst.mockResolvedValue(TEAM);
+      prisma.service.findMany.mockResolvedValue([
+        { id: 's1', name: 'Checkout API' },
+        { id: 's2', name: 'Payments API' },
+      ]);
+
+      const error = await service
+        .deleteTeam('u1', 'o1', 't1')
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(ConflictException);
+      expect((error as ConflictException).getResponse()).toEqual({
+        message: 'Team owns 2 services',
+        services: [
+          { id: 's1', name: 'Checkout API' },
+          { id: 's2', name: 'Payments API' },
+        ],
+      });
       expect(prisma.team.delete).not.toHaveBeenCalled();
     });
 

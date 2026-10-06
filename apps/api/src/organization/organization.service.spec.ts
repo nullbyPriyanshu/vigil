@@ -16,6 +16,7 @@ function createPrismaMock() {
       delete: jest.fn(),
     },
     membership: { findUnique: jest.fn(), update: jest.fn() },
+    service: { deleteMany: jest.fn() },
     $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   };
 }
@@ -205,6 +206,10 @@ describe('OrganizationService', () => {
 
       expect(prisma.organization.delete).toHaveBeenCalledWith({
         where: { id: 'o1' },
+      });
+      // Services are cleared first so nothing holds a team or policy in place.
+      expect(prisma.service.deleteMany).toHaveBeenCalledWith({
+        where: { organizationId: 'o1' },
       });
     });
   });

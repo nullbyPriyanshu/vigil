@@ -32,6 +32,9 @@ model User {
   passwordResets PasswordResetToken[]
   sentInvitations Invitation[]
   teamMemberships TeamMember[]
+  acknowledgedIncidents Incident[] @relation("IncidentAcknowledgedBy")
+  resolvedIncidents     Incident[] @relation("IncidentResolvedBy")
+  incidentEvents        IncidentEvent[]
 }
 
 model RefreshToken {
@@ -70,11 +73,17 @@ model Organization {
   slug         String       @unique
   createdAt    DateTime     @default(now())
   onboardingCompletedAt DateTime?
+  // The number given to the organization's most recent incident. The next
+  // incident gets this + 1, so every organization counts INC-1, INC-2, ...
+  incidentCounter Int @default(0)
 
   memberships  Membership[]
   refreshTokens RefreshToken[]
   invitations  Invitation[]
   teams        Team[]
+  escalationPolicies EscalationPolicy[]
+  services     Service[]
+  incidents    Incident[]
 }
 
 model Membership {
@@ -125,7 +134,8 @@ model Team {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  members TeamMember[]
+  members  TeamMember[]
+  services Service[]
 
   // Two organizations can both have a "platform-team"; one organization
   // can't have two.
@@ -145,4 +155,225 @@ model TeamMember {
 
   @@unique([teamId, userId])
   @@index([userId])
+}
+
+// Who a step of an escalation policy notifies.
+enum EscalationTargetType {
+  USER
+  TEAM
+  SCHEDULE
+}
+
+// Who gets notified about an incident, in what order, and how long to wait
+// before moving on to the next step.
+model EscalationPolicy {
+  id          String   @id @default(uuid())
+  name        String
+  // How many extra times to run through all the steps if nobody responds.
+  repeatCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  steps    EscalationStep[]
+  services Service[]
+
+  @@unique([organizationId, name])
+}
+
+model EscalationStep {
+  id           String @id @default(uuid())
+  // 1 is notified first, then 2, and so on.
+  position     Int
+  // Minutes to wait for a response before moving to the next step.
+  delayMinutes Int
+
+  // targetId points at a User, a Team or a Schedule depending on
+  // targetType, so the database can't check it with a foreign key. The
+  // service checks it when the policy is saved.
+  targetType EscalationTargetType
+  targetId   String
+
+  policyId String
+  policy   EscalationPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, position])
+}
+
+// Something that can break. Alerts arrive for a service and are routed
+// through its escalation policy.
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  // Minutes after which an untouched incident closes itself. Empty = never.
+  autoResolveMinutes Int?
+  createdAt   DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Restrict: a team or policy can't be deleted while a service still
+  // depends on it. The services check this first and explain why.
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  escalationPolicyId String
+  escalationPolicy   EscalationPolicy @relation(fields: [escalationPolicyId], references: [id], onDelete: Restrict)
+
+  apiKeys   ApiKey[]
+  alerts    Alert[]
+  incidents Incident[]
+
+  @@unique([organizationId, name])
+  @@index([teamId])
+  @@index([escalationPolicyId])
+}
+
+// A credential a machine (Sentry, a cron job, a script) uses to send alerts
+// for one service. Like passwords, only a hash of the key is stored; the
+// first 8 characters are kept so people can tell their keys apart.
+model ApiKey {
+  id         String    @id @default(uuid())
+  name       String
+  prefix     String
+  keyHash    String    @unique
+  lastUsedAt DateTime?
+  // Set when the key is revoked. The row is kept for history.
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  alerts Alert[]
+
+  @@index([serviceId])
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  LOW
+}
+
+enum IncidentStatus {
+  TRIGGERED
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+// What the sender says about the problem: it's happening, or it's over.
+enum AlertStatus {
+  TRIGGERED
+  RESOLVED
+}
+
+// One message from a monitoring tool, stored exactly as it arrived. Many
+// alerts about the same problem are grouped into one incident.
+model Alert {
+  id        String      @id @default(uuid())
+  title     String
+  severity  Severity
+  status    AlertStatus
+  dedupKey  String?
+  // The full request body, untouched.
+  payload   Json
+  // true when this alert joined an incident that was already open.
+  deduplicated Boolean @default(false)
+  // Sent by the caller so a retried request isn't stored twice.
+  idempotencyKey String?
+  receivedAt DateTime @default(now())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Empty for a "resolved" alert that found nothing open to close.
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  apiKeyId String?
+  apiKey   ApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  @@unique([serviceId, idempotencyKey])
+  @@index([incidentId])
+  @@index([serviceId, receivedAt])
+}
+
+// The thing people work on: one ongoing problem with one service.
+model Incident {
+  id          String         @id @default(uuid())
+  // The human number, INC-142. Counts up separately in each organization.
+  number      Int
+  title       String
+  description String?
+  severity    Severity
+  status      IncidentStatus @default(TRIGGERED)
+  // Alerts with the same key join this incident while it's open.
+  dedupKey    String?
+  createdAt   DateTime @default(now())
+  lastAlertAt DateTime @default(now())
+
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  acknowledgedBy   User?   @relation("IncidentAcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+
+  resolvedAt   DateTime?
+  // Empty when a "resolved" alert closed it rather than a person.
+  resolvedById String?
+  resolvedBy   User?   @relation("IncidentResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  // Where the incident is in its service's escalation policy.
+  currentStepPosition Int @default(1)
+  escalationRound     Int @default(0)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  alerts Alert[]
+  events IncidentEvent[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+  @@index([serviceId, dedupKey])
+}
+
+enum IncidentEventType {
+  CREATED
+  ACKNOWLEDGED
+  RESOLVED
+  COMMENT
+  ESCALATED
+  NOTIFICATION_SENT
+}
+
+// Who did it: a person, Vigil itself, or an alert from outside.
+enum ActorType {
+  USER
+  SYSTEM
+  INTEGRATION
+}
+
+// One line of an incident's timeline. Rows are only ever added, never
+// changed, and the message is stored as written so history reads the same
+// later.
+model IncidentEvent {
+  id        String            @id @default(uuid())
+  type      IncidentEventType
+  actorType ActorType
+  message   String
+  metadata  Json?
+  createdAt DateTime          @default(now())
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
 }
