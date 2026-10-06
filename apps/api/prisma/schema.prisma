@@ -31,6 +31,7 @@ model User {
   refreshTokens RefreshToken[]
   passwordResets PasswordResetToken[]
   sentInvitations Invitation[]
+  teamMemberships TeamMember[]
 }
 
 model RefreshToken {
@@ -73,6 +74,7 @@ model Organization {
   memberships  Membership[]
   refreshTokens RefreshToken[]
   invitations  Invitation[]
+  teams        Team[]
 }
 
 model Membership {
@@ -110,4 +112,37 @@ model Invitation {
 
   @@index([organizationId])
   @@index([email])
+}
+
+// A named group of people inside an organization. Services and schedules
+// will each belong to a team.
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String
+  createdAt DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  members TeamMember[]
+
+  // Two organizations can both have a "platform-team"; one organization
+  // can't have two.
+  @@unique([organizationId, slug])
+}
+
+// One row per person on a team.
+model TeamMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
 }

@@ -102,6 +102,10 @@ export class MembersService {
       this.prisma.refreshToken.deleteMany({
         where: { userId: targetUserId },
       }),
+      // Leaving the organization also takes them off its teams.
+      this.prisma.teamMember.deleteMany({
+        where: { userId: targetUserId, team: { organizationId } },
+      }),
     ]);
   }
 

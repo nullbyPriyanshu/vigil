@@ -16,6 +16,7 @@ function createPrismaMock() {
       delete: jest.fn(),
     },
     refreshToken: { deleteMany: jest.fn() },
+    teamMember: { deleteMany: jest.fn() },
     $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   };
 }
@@ -174,7 +175,7 @@ describe('MembersService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('deletes the membership and signs the user out', async () => {
+    it('deletes the membership, signs the user out and takes them off teams', async () => {
       setMembers({ me: 'ADMIN', them: 'RESPONDER' });
 
       await service.removeMember('me', 'o1', 'them');
@@ -186,6 +187,9 @@ describe('MembersService', () => {
       });
       expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
         where: { userId: 'them' },
+      });
+      expect(prisma.teamMember.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'them', team: { organizationId: 'o1' } },
       });
     });
   });

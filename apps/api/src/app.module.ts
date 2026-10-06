@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma.module';
 import { UsersModule } from './users/users.module';
 import { MembersModule } from './members/members.module';
 import { InvitationsModule } from './invitations/invitations.module';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { InvitationsModule } from './invitations/invitations.module';
     UsersModule,
     MembersModule,
     InvitationsModule,
+    TeamsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
