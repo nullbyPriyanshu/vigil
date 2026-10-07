@@ -5,9 +5,13 @@
 
 2. Deleting an org leaves orphaned users so we can alert them "You dont belong to any org".
 
-3. No rate limiting yet.** Someone could try many passwords quickly. Adding
-   `@nestjs/throttler` to `/login` and `/forgot-password` is the next
-   improvement.
+3. Wrong passwords are counted per email address in Redis. After 5 in
+   15 minutes that address is locked until the 15 minutes are up, and a
+   correct login clears the count. Counting per address, not per IP,
+   because the API sits behind the web app and sees every visitor as the
+   same IP. Password-reset emails are capped at 3 per address per
+   15 minutes; the fourth request gets the same answer but no email.
+
 
 4. One incident per problem, without a special database index. When an
    alert arrives, the service's row is locked (`SELECT ... FOR UPDATE`)

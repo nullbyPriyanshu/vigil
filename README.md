@@ -57,6 +57,8 @@ API_KEY_PEPPER=another-long-random-string
 RESEND_API_KEY=            # from resend.com
 RESEND_WEBHOOK_SECRET=     # optional, for delivery status
 MAIL_FROM="Vigil <onboarding@resend.dev>"
+SEED_OWNER_EMAIL=          # only for `pnpm seed`: your own email
+SEED_PASSWORD=             # only for `pnpm seed`: the password to log in with
 ```
 
 Create `apps/web/.env.local`:
@@ -77,9 +79,11 @@ pnpm dev                      # web on :3000, API on :3001
 ```
 
 `pnpm seed` creates the "Vigil" organization with 7 people, 3 teams,
-3 schedules, 3 escalation policies, 7 services and 84 incidents. It prints
-the logins and API keys when it finishes. Running it again replaces that
-organization and nothing else.
+3 schedules, 3 escalation policies, 7 services and 84 incidents. You are
+the owner (`SEED_OWNER_EMAIL`) and everyone logs in with `SEED_PASSWORD`;
+neither is stored in the code. It prints the logins and API keys when it
+finishes. Running it again replaces that organization and nothing else, and
+an owner account that already exists keeps its own password.
 
 ## Tests
 
@@ -110,6 +114,10 @@ Each service page has copy-and-paste instructions.
 
 Press `?` inside the app for the full list. `A` acknowledges and `R`
 resolves the open incident; `G` then a letter jumps between pages.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
 
 ## Decisions
 
