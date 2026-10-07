@@ -104,7 +104,7 @@ function TeamCard({ team }: { team: TeamSummary }) {
                 <UserAvatar
                   key={member.userId}
                   name={member.name}
-                  className="size-8 text-[11px] ring-2 ring-zinc-50 dark:ring-[#0a0a0a]"
+                  className="size-8 text-[11px] ring-2 ring-zinc-50 dark:ring-(--ink-1)"
                 />
               ))}
             </div>

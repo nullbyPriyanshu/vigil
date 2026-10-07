@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar";
 // navbar, then the logo and the page's form centred on a plain background.
 export function AuthBackground({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
+    <div className="flex min-h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-(--ink-0)">
       {/* No login/user section here: these pages are only reachable while
           logged out, and the page itself already has the login/signup form. */}
       <Navbar showAuth={false} />

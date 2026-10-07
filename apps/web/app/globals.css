@@ -52,39 +52,56 @@
   /* Small grey text. Darker on white and lighter on black, so it passes
      the 4.5:1 contrast guideline in both themes. */
   --ink-soft: #666666;
+
+  /* The few colours a colour theme is allowed to change. Everything else
+     below is built from them.
+       --brand             buttons, the chart line, highlights
+       --paper, --paper-2  light mode surfaces (cards, page)
+       --ink-0, -1, -2     dark mode surfaces (shell, page, pop-ups)
+       --shade, --snow     the tint of lines and of bright text */
   --brand: #0d0d0d;
   --brand-foreground: #f7f7f8;
-  --background: #fafafa;
+  --paper: #ffffff;
+  --paper-2: #fafafa;
+  --ink-0: #050505;
+  --ink-1: #0a0a0a;
+  --ink-2: #0e0e0e;
+  /* --shade tints lines and hover washes in light mode; --paper does the
+     same job in dark mode; --snow is the bright heading colour in dark. */
+  --shade: #000000;
+  --snow: #f1f0ee;
+
+  --background: var(--paper-2);
   --foreground: #0d0d0d;
-  --card: #ffffff;
-  --card-foreground: #0d0d0d;
-  --popover: #ffffff;
-  --popover-foreground: #0d0d0d;
-  --primary: #0d0d0d;
-  --primary-foreground: #f7f7f8;
-  --secondary: #f1f0ee;
-  --secondary-foreground: #0d0d0d;
-  --muted: #f1f0ee;
+  --card: var(--paper);
+  --card-foreground: var(--foreground);
+  --popover: var(--paper);
+  --popover-foreground: var(--foreground);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: color-mix(in oklab, black 5%, var(--paper));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in oklab, black 5%, var(--paper));
   --muted-foreground: #666666;
-  --accent: #f1f0ee;
-  --accent-foreground: #0d0d0d;
+  --accent: color-mix(in oklab, black 5%, var(--paper));
+  --accent-foreground: var(--foreground);
   --destructive: oklch(0.577 0.245 27.325);
   --border: rgb(0 0 0 / 12%);
   --input: rgb(0 0 0 / 18%);
-  --ring: #a3a3a3;
-  --chart-1: #0d0d0d;
+  --ring: color-mix(in oklab, var(--brand) 45%, #a3a3a3);
+  --chart-1: var(--brand);
   --chart-2: #525252;
   --chart-3: #737373;
   --chart-4: #a3a3a3;
   --chart-5: #d4d4d4;
   --radius: 0.625rem;
-  --sidebar: #fafafa;
-  --sidebar-foreground: #0d0d0d;
-  --sidebar-primary: #0d0d0d;
-  --sidebar-primary-foreground: #f7f7f8;
-  --sidebar-accent: #f1f0ee;
-  --sidebar-accent-foreground: #0d0d0d;
-  --sidebar-border: rgb(0 0 0 / 9%);
+  --sidebar: var(--paper-2);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: color-mix(in oklab, black 5%, var(--paper));
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: rgb(0 0 0 / 12%);
   --sidebar-ring: #a3a3a3;
 }
 
@@ -92,37 +109,116 @@
   --ink-soft: #8f8f8f;
   --brand: #f1f0ee;
   --brand-foreground: #0d0d0d;
-  --background: #050505;
+
+  --background: var(--ink-0);
   --foreground: #f1f0ee;
-  --card: #0b0b0b;
-  --card-foreground: #f1f0ee;
-  --popover: #0e0e0e;
-  --popover-foreground: #f1f0ee;
-  --primary: #f1f0ee;
-  --primary-foreground: #0d0d0d;
-  --secondary: #171717;
-  --secondary-foreground: #f1f0ee;
-  --muted: #141414;
+  --card: var(--ink-1);
+  --card-foreground: var(--foreground);
+  --popover: var(--ink-2);
+  --popover-foreground: var(--foreground);
+  --secondary: color-mix(in oklab, white 8%, var(--ink-0));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in oklab, white 6%, var(--ink-0));
   --muted-foreground: #a3a3a3;
-  --accent: #171717;
-  --accent-foreground: #f1f0ee;
+  --accent: color-mix(in oklab, white 8%, var(--ink-0));
+  --accent-foreground: var(--foreground);
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgb(255 255 255 / 9%);
   --input: rgb(255 255 255 / 13%);
-  --ring: #737373;
-  --chart-1: #f1f0ee;
+  --ring: color-mix(in oklab, var(--brand) 45%, #737373);
   --chart-2: #a3a3a3;
   --chart-3: #737373;
   --chart-4: #525252;
   --chart-5: #2e2e2e;
-  --sidebar: #050505;
-  --sidebar-foreground: #f1f0ee;
-  --sidebar-primary: #f1f0ee;
-  --sidebar-primary-foreground: #0d0d0d;
-  --sidebar-accent: #171717;
-  --sidebar-accent-foreground: #f1f0ee;
+  --sidebar: var(--ink-0);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-accent: color-mix(in oklab, white 8%, var(--ink-0));
+  --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: rgb(255 255 255 / 9%);
   --sidebar-ring: #737373;
+}
+
+/* ---------- Colour themes (Settings, Appearance) ----------
+   Each theme sets the same handful of colours twice: once for light mode
+   and once for dark. The default, "Mono", is the values above. */
+
+[data-theme="mono"] {
+  --brand: #0d0d0d;
+  --brand-foreground: #f7f7f8;
+  --paper: #ffffff;
+  --paper-2: #fafafa;
+  --shade: #000000;
+  --foreground: #0d0d0d;
+}
+.dark[data-theme="mono"] {
+  --brand: #f1f0ee;
+  --brand-foreground: #0d0d0d;
+  --paper: #ffffff;
+  --snow: #f1f0ee;
+  --foreground: #f1f0ee;
+  --ink-0: #050505;
+  --ink-1: #0a0a0a;
+  --ink-2: #0e0e0e;
+}
+
+/* Indigo: violet-blue on lavender paper, or on deep navy. */
+[data-theme="indigo"] {
+  --brand: #5046e5;
+  --brand-foreground: #ffffff;
+  --paper: #ffffff;
+  --paper-2: #f3f2ff;
+  --shade: #2a2470;
+  --foreground: #14122e;
+}
+.dark[data-theme="indigo"] {
+  --brand: #8f97ff;
+  --brand-foreground: #0a0a1f;
+  --paper: #cfd3ff;
+  --snow: #eceeff;
+  --foreground: #eceeff;
+  --ink-0: #0a0a1f;
+  --ink-1: #10102b;
+  --ink-2: #17173a;
+}
+
+/* Forest: deep green on mint paper, or bright green on near-black green. */
+[data-theme="forest"] {
+  --brand: #0e8a4a;
+  --brand-foreground: #ffffff;
+  --paper: #ffffff;
+  --paper-2: #eef8f1;
+  --shade: #0b4a2a;
+  --foreground: #0a1f14;
+}
+.dark[data-theme="forest"] {
+  --brand: #3ddc84;
+  --brand-foreground: #04120a;
+  --paper: #c4f3d6;
+  --snow: #e9fff1;
+  --foreground: #e9fff1;
+  --ink-0: #05110b;
+  --ink-1: #0a1911;
+  --ink-2: #0f2318;
+}
+
+/* Ember: burnt orange on cream paper, or glowing orange on dark brown. */
+[data-theme="ember"] {
+  --brand: #e2520a;
+  --brand-foreground: #ffffff;
+  --paper: #ffffff;
+  --paper-2: #fff4ea;
+  --shade: #6b2a0a;
+  --foreground: #24130a;
+}
+.dark[data-theme="ember"] {
+  --brand: #ff8a3d;
+  --brand-foreground: #160b05;
+  --paper: #ffd9bf;
+  --snow: #fff2e8;
+  --foreground: #fff2e8;
+  --ink-0: #130a06;
+  --ink-1: #1b0f09;
+  --ink-2: #25160d;
 }
 
 /* The app has one accent, and it is the text colour itself (near-black in
@@ -135,8 +231,10 @@
   --color-emerald-500: var(--brand);
   --color-emerald-600: var(--brand);
   --color-emerald-700: var(--brand);
-  --color-zinc-50: #fafafa;
-  --color-zinc-100: #f1f0ee;
+  --color-white: var(--paper);
+  --color-black: var(--shade);
+  --color-zinc-50: var(--paper-2);
+  --color-zinc-100: var(--snow);
   --color-zinc-200: #e5e5e5;
   --color-zinc-300: #d4d4d4;
   --color-zinc-400: #a3a3a3;

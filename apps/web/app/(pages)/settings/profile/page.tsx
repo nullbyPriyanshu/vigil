@@ -6,6 +6,8 @@ import {
   SettingsPageTitle,
   SettingsSection,
 } from "@/components/settings/settings-section";
+import { DeleteAccount } from "@/components/settings/delete-account";
+import { EmailForm } from "@/components/settings/email-form";
 import { NotificationsForm } from "@/components/settings/notifications-form";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
@@ -62,6 +64,17 @@ export default function ProfileSettingsPage() {
         </SettingsSection>
 
         <SettingsSection
+          title="Email"
+          description="The address you sign in with and get paged on."
+        >
+          {isLoading || !profile ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (
+            <EmailForm profile={profile} />
+          )}
+        </SettingsSection>
+
+        <SettingsSection
           title="Password"
           description="Changing it signs you out on every other device."
         >
@@ -87,6 +100,13 @@ export default function ProfileSettingsPage() {
               }
             />
           </dl>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Delete account"
+          description="Remove yourself from Vigil for good. If you own an organization with other members, hand it over first."
+        >
+          <DeleteAccount />
         </SettingsSection>
       </div>
     </div>

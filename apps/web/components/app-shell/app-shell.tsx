@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
+    <div className="flex h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-(--ink-0)">
       <a
         href="#main"
         className="sr-only z-50 rounded-lg bg-foreground px-3 py-2 text-sm font-medium text-background focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AppHeader onMenuClick={() => setMobileNavOpen(true)} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-        <main id="main" tabIndex={-1} className="outline-none relative m-1.5 min-w-0 flex-1 overflow-y-auto overscroll-contain rounded-xl sm:m-2 border border-black/[0.06] bg-zinc-50 transition-colors duration-300 dark:border-white/[0.08] dark:bg-[#0a0a0a]">
+        <main id="main" tabIndex={-1} className="outline-none relative m-1.5 min-w-0 flex-1 overflow-y-auto overscroll-contain rounded-xl sm:m-2 border border-black/[0.06] bg-zinc-50 transition-colors duration-300 dark:border-white/[0.08] dark:bg-(--ink-1)">
           <div className="relative w-full max-w-7xl px-4 py-6 sm:px-8 sm:py-8">
             {children}
           </div>

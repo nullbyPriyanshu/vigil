@@ -303,7 +303,7 @@ export function ParticleLogo({ className }: { className?: string }) {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className={cn("aspect-square cursor-pointer text-foreground", className)}
+      className={cn("aspect-square cursor-pointer text-emerald-500", className)}
     />
   );
 }

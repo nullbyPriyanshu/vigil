@@ -338,7 +338,7 @@ export default function IncidentPage({
       {/* Phones: the buttons stay within reach of a thumb however far the
           page is scrolled. */}
       {canRespond && open && (
-        <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-black/[0.08] bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden dark:border-white/[0.08] dark:bg-[#050505]">
+        <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-black/[0.08] bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden dark:border-white/[0.08] dark:bg-(--ink-0)">
           {actions}
         </div>
       )}

@@ -13,7 +13,7 @@ export function SplashScreen() {
     <div
       aria-hidden={!loading}
       className={cn(
-        "fixed inset-0 z-[60] flex flex-col items-center justify-center gap-5 bg-white transition-opacity duration-500 dark:bg-[#050505]",
+        "fixed inset-0 z-[60] flex flex-col items-center justify-center gap-5 bg-white transition-opacity duration-500 dark:bg-(--ink-0)",
         loading ? "opacity-100" : "pointer-events-none opacity-0",
       )}
     >

@@ -69,7 +69,7 @@ const BORDER = "border-black/[0.06] dark:border-white/[0.06]";
 
 export default function Home() {
   return (
-    <div className="relative bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
+    <div className="relative bg-white text-foreground transition-colors duration-300 dark:bg-(--ink-0)">
       <LandingNavbar />
 
       <main>
