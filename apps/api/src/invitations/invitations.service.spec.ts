@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -9,11 +10,13 @@ import {
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth/auth.service';
-import { hashToken } from '../auth/utils/tokens';
 import { MailService } from '../mail/mail.service';
 import { MembersService } from '../members/members.service';
 import { PrismaService } from '../prisma.service';
 import { InvitationsService } from './invitations.service';
+
+const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 // These two pull in ES-module-only packages Jest can't load; the tests use
 // fakes for them anyway.

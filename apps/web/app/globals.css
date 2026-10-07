@@ -49,6 +49,9 @@
 }
 
 :root {
+  /* Small grey text. Darker on white and lighter on black, so it passes
+     the 4.5:1 contrast guideline in both themes. */
+  --ink-soft: #666666;
   --brand: #0d0d0d;
   --brand-foreground: #f7f7f8;
   --background: #fafafa;
@@ -62,12 +65,12 @@
   --secondary: #f1f0ee;
   --secondary-foreground: #0d0d0d;
   --muted: #f1f0ee;
-  --muted-foreground: #737373;
+  --muted-foreground: #666666;
   --accent: #f1f0ee;
   --accent-foreground: #0d0d0d;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: rgb(0 0 0 / 9%);
-  --input: rgb(0 0 0 / 13%);
+  --border: rgb(0 0 0 / 12%);
+  --input: rgb(0 0 0 / 18%);
   --ring: #a3a3a3;
   --chart-1: #0d0d0d;
   --chart-2: #525252;
@@ -86,6 +89,7 @@
 }
 
 .dark {
+  --ink-soft: #8f8f8f;
   --brand: #f1f0ee;
   --brand-foreground: #0d0d0d;
   --background: #050505;
@@ -136,7 +140,7 @@
   --color-zinc-200: #e5e5e5;
   --color-zinc-300: #d4d4d4;
   --color-zinc-400: #a3a3a3;
-  --color-zinc-500: #7c7c7c;
+  --color-zinc-500: var(--ink-soft);
   --color-zinc-600: #525252;
   --color-zinc-700: #3a3a3a;
   --color-zinc-800: #1c1c1c;
@@ -162,6 +166,12 @@
   /* Scrolling a list to its end shouldn't start dragging the whole page. */
   body {
     overscroll-behavior-y: none;
+  }
+  /* Anything reachable by keyboard shows where the focus is, unless the
+     component draws its own ring. */
+  :where(a, button, [role="link"], [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   h1 {
     font-family: var(--font-heading);

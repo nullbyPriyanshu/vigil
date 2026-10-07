@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { OnCallEntry } from "@/lib/mock/dashboard";
@@ -13,10 +14,15 @@ export function OnCallPanel({ entries }: { entries: OnCallEntry[] }) {
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Nobody is on call. Create a schedule so incidents have somewhere
-            to route.
-          </p>
+          <div>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Nobody is on call. A schedule decides who gets paged when an
+              incident opens.
+            </p>
+            <Link href="/schedules" className="mt-3 inline-flex items-center gap-1 rounded-md text-sm font-medium text-zinc-900 underline decoration-black/20 underline-offset-4 outline-none hover:decoration-black/60 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:text-zinc-100 dark:decoration-white/25 dark:hover:decoration-white/70">
+              Create a schedule
+            </Link>
+          </div>
         ) : (
           <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
             {entries.map((entry) => (

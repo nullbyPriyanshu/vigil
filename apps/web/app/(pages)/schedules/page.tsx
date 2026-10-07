@@ -110,6 +110,11 @@ function ScheduleCard({ schedule }: { schedule: ScheduleSummary }) {
               <p className="truncate text-xs text-muted-foreground">
                 On call until {formatShiftTime(onCall.until)}
               </p>
+              {onCall.nextName && (
+                <p className="truncate text-xs text-muted-foreground">
+                  Next: {onCall.nextName}
+                </p>
+              )}
             </div>
           </>
         ) : (

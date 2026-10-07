@@ -277,6 +277,9 @@ export function SearchTrigger() {
               ))
             )}
           </div>
+          <p className="border-t border-black/[0.08] px-4 py-2 text-xs text-muted-foreground dark:border-white/[0.08]">
+            Press ? anywhere for keyboard shortcuts
+          </p>
         </DialogContent>
       </Dialog>
     </>

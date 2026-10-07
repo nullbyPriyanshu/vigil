@@ -133,10 +133,10 @@ export function ProductStage() {
             transform: "translate3d(0, calc((1 - var(--heading)) * 16px), 0)",
           }}
         >
-          <p className="text-xs font-medium tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-400">
-            Product
+          <p className="text-[11px] font-medium tracking-[0.2em] text-zinc-500 uppercase">
+            01 / Product
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance text-zinc-950 sm:text-4xl dark:text-white">
+          <h2 className="mt-4 font-heading text-4xl leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-zinc-950 sm:text-5xl dark:text-zinc-100">
             One screen for the whole response.
           </h2>
         </div>

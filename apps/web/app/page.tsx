@@ -120,11 +120,11 @@ export default function Home() {
         <section id="features" className={cn("scroll-mt-16 border-t", BORDER)}>
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
             <Reveal>
-              <SectionLabel>Features</SectionLabel>
-              <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-balance text-zinc-950 sm:text-4xl dark:text-white">
+              <SectionLabel index={2}>Features</SectionLabel>
+              <h2 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-zinc-950 sm:text-5xl dark:text-zinc-100">
                 Everything on-call needs, in one place.
               </h2>
-              <p className="mt-4 max-w-xl text-base text-zinc-600 dark:text-zinc-400">
+              <p className="mt-5 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
                 From the first alert to the final fix, Vigil keeps the whole
                 response in view.
               </p>
@@ -141,7 +141,7 @@ export default function Home() {
                   )}
                 >
                   <span className={cn("flex size-10 items-center justify-center rounded-lg border", BORDER)}>
-                    <feature.icon className="size-[18px] text-emerald-600 dark:text-emerald-400" />
+                    <feature.icon className="size-[18px] text-zinc-500 dark:text-zinc-400" />
                   </span>
                   <h3 className="mt-5 text-base font-medium text-zinc-900 dark:text-zinc-100">
                     {feature.title}
@@ -160,11 +160,11 @@ export default function Home() {
           <div className="mx-auto grid max-w-7xl gap-x-16 gap-y-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
             {/* Stays in view on wide screens while the steps scroll past. */}
             <Reveal className="lg:sticky lg:top-32 lg:self-start">
-              <SectionLabel>How it works</SectionLabel>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-balance text-zinc-950 sm:text-4xl dark:text-white">
+              <SectionLabel index={3}>How it works</SectionLabel>
+              <h2 className="mt-4 font-heading text-4xl leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-zinc-950 sm:text-5xl dark:text-zinc-100">
                 From alert to resolved in three steps.
               </h2>
-              <p className="mt-4 max-w-sm text-base text-zinc-600 dark:text-zinc-400">
+              <p className="mt-5 max-w-sm text-lg text-zinc-600 dark:text-zinc-400">
                 Nobody has to work out who to call. Vigil does the routing, so
                 your team can go straight to the fix.
               </p>
@@ -178,11 +178,11 @@ export default function Home() {
         <section className={cn("overflow-hidden border-t", BORDER)}>
           <div className="mx-auto grid max-w-7xl items-center gap-x-14 gap-y-14 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
             <Reveal>
-              <SectionLabel>Your team</SectionLabel>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-balance text-zinc-950 sm:text-4xl dark:text-white">
+              <SectionLabel index={4}>Your team</SectionLabel>
+              <h2 className="mt-4 font-heading text-4xl leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-zinc-950 sm:text-5xl dark:text-zinc-100">
                 Everyone in, each with the right access.
               </h2>
-              <p className="mt-4 max-w-md text-base text-zinc-600 dark:text-zinc-400">
+              <p className="mt-5 max-w-md text-lg text-zinc-600 dark:text-zinc-400">
                 See who&apos;s in your organization at a glance, and change
                 what each person can do in a couple of clicks.
               </p>
@@ -212,7 +212,7 @@ export default function Home() {
         {/* ---------- Closing call to action ---------- */}
         <section className={cn("border-t", BORDER)}>
           <Reveal className="mx-auto flex max-w-7xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-28">
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance text-zinc-950 sm:text-5xl dark:text-white">
+            <h2 className="max-w-3xl font-heading text-4xl leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-zinc-950 sm:text-6xl dark:text-zinc-100">
               Ready for calmer on-call?
             </h2>
             <p className="mt-5 max-w-lg text-base text-zinc-600 dark:text-zinc-400">
@@ -229,10 +229,17 @@ export default function Home() {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+// The small numbered line above each section's headline: "02 / FEATURES".
+function SectionLabel({
+  index,
+  children,
+}: {
+  index: number;
+  children: React.ReactNode;
+}) {
   return (
-    <p className="text-xs font-medium tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-400">
-      {children}
+    <p className="text-[11px] font-medium tracking-[0.2em] text-zinc-500 uppercase">
+      {String(index).padStart(2, "0")} / {children}
     </p>
   );
 }

@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -13,8 +14,6 @@ import { Prisma, type Membership } from '../generated/prisma/client';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { slugify } from './utils/slugify';
-import { generateToken, hashToken } from './utils/tokens';
 import {
   BCRYPT_ROUNDS,
   PASSWORD_RESET_TTL_MS,
@@ -43,7 +42,7 @@ export class AuthService {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const slug = slugify(dto.organizationName);
+    const slug = this.slugify(dto.organizationName);
     if (!slug) {
       throw new BadRequestException(
         'Organization name must contain at least one letter or number',
@@ -187,7 +186,7 @@ export class AuthService {
     if (!refreshToken) throw invalid;
 
     const stored = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash: hashToken(refreshToken) },
+      where: { tokenHash: this.hashToken(refreshToken) },
     });
 
     if (!stored || stored.expiresAt <= new Date()) throw invalid;
@@ -230,7 +229,7 @@ export class AuthService {
     if (!refreshToken) return;
 
     await this.prisma.refreshToken.deleteMany({
-      where: { tokenHash: hashToken(refreshToken) },
+      where: { tokenHash: this.hashToken(refreshToken) },
     });
   }
 
@@ -243,7 +242,7 @@ export class AuthService {
       return { message: FORGOT_PASSWORD_MESSAGE };
     }
 
-    const resetToken = generateToken();
+    const resetToken = this.generateToken();
 
     await this.prisma.$transaction([
       this.prisma.passwordResetToken.deleteMany({
@@ -251,7 +250,7 @@ export class AuthService {
       }),
       this.prisma.passwordResetToken.create({
         data: {
-          tokenHash: hashToken(resetToken),
+          tokenHash: this.hashToken(resetToken),
           userId: user.id,
           expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
         },
@@ -276,7 +275,7 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     const passwordReset = await this.prisma.passwordResetToken.findUnique({
-      where: { tokenHash: hashToken(dto.token) },
+      where: { tokenHash: this.hashToken(dto.token) },
       include: { user: true },
     });
 
@@ -335,10 +334,10 @@ export class AuthService {
     };
     const accessToken = await this.jwt.signAsync(payload);
 
-    const refreshToken = generateToken();
+    const refreshToken = this.generateToken();
     await this.prisma.refreshToken.create({
       data: {
-        tokenHash: hashToken(refreshToken),
+        tokenHash: this.hashToken(refreshToken),
         userId,
         organizationId: membership.organizationId,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
@@ -346,5 +345,22 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  private generateToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private slugify(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 }

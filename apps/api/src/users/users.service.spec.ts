@@ -1,10 +1,13 @@
+import { createHash } from 'crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
-import { hashToken } from '../auth/utils/tokens';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from './users.service';
+
+const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 jest.mock('../mail/mail.service', () => ({ MailService: class {} }));
 

@@ -9,20 +9,9 @@ export const ROLE_ORDER: Role[] = ['OWNER', 'ADMIN', 'RESPONDER', 'VIEWER'];
 export const ASSIGNABLE_ROLES = ['ADMIN', 'RESPONDER', 'VIEWER'] as const;
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
-// Who is allowed to change roles and remove members.
-export function canManageMembers(role: Role): boolean {
-  return role === 'OWNER' || role === 'ADMIN';
-}
-
 export const ROLE_LABELS: Record<Role, string> = {
   OWNER: 'Owner',
   ADMIN: 'Admin',
   RESPONDER: 'Responder',
   VIEWER: 'Viewer',
 };
-
-// Who is allowed to acknowledge, resolve and comment on incidents.
-// Viewers can only look.
-export function canRespond(role: Role): boolean {
-  return role !== 'VIEWER';
-}

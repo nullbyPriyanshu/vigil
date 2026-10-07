@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import {
   Card,
   CardAction,
@@ -34,10 +34,19 @@ export function OpenIncidentsPanel({
       </CardHeader>
 
       {incidents.length === 0 ? (
-        <p className="px-(--card-spacing) pb-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Nothing open. A triggered alert will show up here the moment it
-          arrives.
-        </p>
+        <div className="flex flex-col items-center px-(--card-spacing) py-8 text-center">
+          <CheckIcon className="size-5 text-zinc-400" />
+          <p className="mt-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            All clear
+          </p>
+          <p className="mt-1 max-w-xs text-sm text-zinc-500 dark:text-zinc-400">
+            Nothing is open. A new incident shows up here the moment an
+            alert arrives.
+          </p>
+          <Link href="/services" className="mt-3 inline-flex items-center gap-1 rounded-md text-sm font-medium text-zinc-900 underline decoration-black/20 underline-offset-4 outline-none hover:decoration-black/60 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:text-zinc-100 dark:decoration-white/25 dark:hover:decoration-white/70">
+            Send a test alert from a service
+          </Link>
+        </div>
       ) : (
         <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
           {incidents.map((incident) => (

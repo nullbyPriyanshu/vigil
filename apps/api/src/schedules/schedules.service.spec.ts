@@ -118,6 +118,7 @@ describe('SchedulesService', () => {
         userId: 'u2',
         name: 'Rahul Verma',
         until: new Date('2026-01-19T04:30:00.000Z'),
+        nextName: 'Sneha Kapoor',
       },
     });
   });

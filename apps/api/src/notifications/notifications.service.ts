@@ -1,12 +1,17 @@
+import { createHash, randomBytes } from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
-import { generateToken, hashToken } from 'src/auth/utils/tokens';
 import { MailService } from 'src/mail/mail.service';
 import { PrismaService } from 'src/prisma.service';
 import { SchedulesService } from 'src/schedules/schedules.service';
 
 const ACTION_LINK_TTL_MS = 24 * 60 * 60 * 1000;
 
-type Person = { id: string; name: string; email: string };
+type Person = {
+  id: string;
+  name: string;
+  email: string;
+  emailNotifications?: boolean;
+};
 
 @Injectable()
 export class NotificationsService {
@@ -81,6 +86,18 @@ export class NotificationsService {
       }
 
       for (const person of people) {
+        if (person.emailNotifications === false) {
+          await this.prisma.incidentEvent.create({
+            data: {
+              incidentId: incident.id,
+              type: 'NOTIFICATION_FAILED',
+              actorType: 'SYSTEM',
+              message: `${person.name} has incident emails turned off`,
+            },
+          });
+          continue;
+        }
+
         await this.sendIncidentEmail(incident, person, step.position);
       }
     } catch (error) {
@@ -107,21 +124,21 @@ export class NotificationsService {
     person: Person,
     stepPosition: number,
   ) {
-    const acknowledgeToken = generateToken();
-    const resolveToken = generateToken();
+    const acknowledgeToken = this.generateToken();
+    const resolveToken = this.generateToken();
     const expiresAt = new Date(Date.now() + ACTION_LINK_TTL_MS);
 
     await this.prisma.actionToken.createMany({
       data: [
         {
-          tokenHash: hashToken(acknowledgeToken),
+          tokenHash: this.hashToken(acknowledgeToken),
           action: 'ACKNOWLEDGE',
           incidentId: incident.id,
           userId: person.id,
           expiresAt,
         },
         {
-          tokenHash: hashToken(resolveToken),
+          tokenHash: this.hashToken(resolveToken),
           action: 'RESOLVE',
           incidentId: incident.id,
           userId: person.id,
@@ -172,5 +189,13 @@ export class NotificationsService {
         },
       },
     });
+  }
+
+  private generateToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'crypto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,7 +12,6 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from 'src/auth/auth.service';
 import { BCRYPT_ROUNDS, INVITATION_TTL_MS } from 'src/auth/auth.constants';
 import type { CurrentUserPayload } from 'src/auth/auth.guard';
-import { generateToken, hashToken } from 'src/auth/utils/tokens';
 import { ROLE_LABELS } from 'src/common/permissions';
 import { MailService } from 'src/mail/mail.service';
 import { MembersService } from 'src/members/members.service';
@@ -50,12 +50,12 @@ export class InvitationsService {
       where: { organizationId, email: dto.email, acceptedAt: null },
     });
 
-    const token = generateToken();
+    const token = this.generateToken();
     const invitation = await this.prisma.invitation.create({
       data: {
         email: dto.email,
         role: dto.role,
-        tokenHash: hashToken(token),
+        tokenHash: this.hashToken(token),
         expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
         organizationId,
         invitedById: userId,
@@ -271,7 +271,7 @@ export class InvitationsService {
 
   private async findUsableInvitation(token: string) {
     const invitation = await this.prisma.invitation.findUnique({
-      where: { tokenHash: hashToken(token) },
+      where: { tokenHash: this.hashToken(token) },
       include: { organization: true },
     });
 
@@ -289,5 +289,13 @@ export class InvitationsService {
     }
 
     return invitation;
+  }
+
+  private generateToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

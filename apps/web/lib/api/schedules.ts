@@ -2,7 +2,13 @@ import api from "./axios";
 
 export type RotationType = "DAILY" | "WEEKLY";
 
-export type CurrentOnCall = { userId: string; name: string; until: string };
+export type CurrentOnCall = {
+  userId: string;
+  name: string;
+  until: string;
+  // Who takes over at `until`. null when only one person is on the rotation.
+  nextName: string | null;
+};
 
 // One row on the schedules list.
 export type ScheduleSummary = {

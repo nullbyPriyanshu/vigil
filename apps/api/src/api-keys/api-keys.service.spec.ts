@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { MembersService } from '../members/members.service';
 import { PrismaService } from '../prisma.service';
 import { ApiKeysService } from './api-keys.service';
-import { generateApiKey, hashApiKey } from './utils/apiKey';
 
 function createPrismaMock() {
   return {
@@ -39,18 +38,18 @@ describe('ApiKeysService', () => {
   });
 
   it('generates vgl_live_ + 48 hex characters, with the first 8 as the prefix', () => {
-    const { key, prefix } = generateApiKey();
+    const { key, prefix } = service.generateApiKey();
 
     expect(key).toMatch(/^vgl_live_[0-9a-f]{48}$/);
     expect(key.slice(9, 17)).toBe(prefix);
   });
 
   it('hashes with the pepper, so a different pepper gives a different hash', () => {
-    const first = hashApiKey('vgl_live_abc');
+    const first = service.hashApiKey('vgl_live_abc');
     process.env.API_KEY_PEPPER = 'another-pepper';
 
     expect(first).toMatch(/^[0-9a-f]{64}$/);
-    expect(hashApiKey('vgl_live_abc')).not.toBe(first);
+    expect(service.hashApiKey('vgl_live_abc')).not.toBe(first);
   });
 
   it('lists keys without the hash', async () => {
@@ -111,7 +110,7 @@ describe('ApiKeysService', () => {
     expect(stored).toEqual({
       name: 'Sentry',
       prefix: result.prefix,
-      keyHash: hashApiKey(result.key),
+      keyHash: service.hashApiKey(result.key),
       serviceId: 's1',
     });
   });
@@ -151,7 +150,7 @@ describe('ApiKeysService', () => {
       organizationId: 'o1',
     });
     expect(prisma.apiKey.findUnique).toHaveBeenCalledWith({
-      where: { keyHash: hashApiKey('vgl_live_x') },
+      where: { keyHash: service.hashApiKey('vgl_live_x') },
       include: { service: true },
     });
 

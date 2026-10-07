@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { slugify } from 'src/auth/utils/slugify';
 import { MembersService } from 'src/members/members.service';
 import { PrismaService } from 'src/prisma.service';
 import { SchedulesService } from 'src/schedules/schedules.service';
@@ -258,7 +257,7 @@ export class TeamsService {
     name: string,
     ignoreTeamId?: string,
   ) {
-    const slug = slugify(name);
+    const slug = this.slugify(name);
     if (!slug) {
       throw new BadRequestException(
         'Team name must contain at least one letter or number',
@@ -275,5 +274,14 @@ export class TeamsService {
     }
 
     return slug;
+  }
+
+  private slugify(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 }

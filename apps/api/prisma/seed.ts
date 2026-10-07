@@ -9,8 +9,9 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL as string }),
 });
 
-const ORG_NAME = 'Acme Corp';
-const ORG_SLUG = 'acme-corp';
+const ORG_NAME = 'Vigil';
+const ORG_SLUG = 'vigil';
+const OWNER_EMAIL = 'pmaurya.dev@gmail.com';
 const PASSWORD = 'Vigil@12345';
 const TIMEZONE = 'Asia/Kolkata';
 
@@ -18,7 +19,7 @@ const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 
 const PEOPLE = [
-  { key: 'aarav', name: 'Aarav Mehta', role: 'OWNER' },
+  { key: 'priyanshu', name: 'Priyanshu Maurya', role: 'OWNER' },
   { key: 'rahul', name: 'Rahul Verma', role: 'ADMIN' },
   { key: 'sneha', name: 'Sneha Kapoor', role: 'RESPONDER' },
   { key: 'amit', name: 'Amit Sharma', role: 'RESPONDER' },
@@ -28,13 +29,16 @@ const PEOPLE = [
 ] as const;
 
 function emailFor(key: string) {
+  if (key === 'priyanshu') {
+    return OWNER_EMAIL;
+  }
   return `delivered+${key}@resend.dev`;
 }
 
 const TEAMS = [
-  { name: 'Platform Team', slug: 'platform-team', members: ['aarav', 'rahul', 'sneha', 'amit'] },
+  { name: 'Platform Team', slug: 'platform-team', members: ['priyanshu', 'rahul', 'sneha', 'amit'] },
   { name: 'Payments Team', slug: 'payments-team', members: ['rahul', 'maya', 'daniel'] },
-  { name: 'Infrastructure', slug: 'infrastructure', members: ['aarav', 'amit', 'daniel', 'zara'] },
+  { name: 'Infrastructure', slug: 'infrastructure', members: ['priyanshu', 'amit', 'daniel', 'zara'] },
 ];
 
 const SERVICES = [
@@ -97,8 +101,9 @@ async function removeOldSeed() {
     await prisma.organization.delete({ where: { id: organizationId } });
   }
 
+  const teammates = PEOPLE.filter((person) => person.key !== 'priyanshu');
   await prisma.user.deleteMany({
-    where: { email: { in: PEOPLE.map((person) => emailFor(person.key)) } },
+    where: { email: { in: teammates.map((person) => emailFor(person.key)) } },
   });
 }
 
@@ -120,20 +125,21 @@ async function main() {
 
   const users: Record<string, { id: string; name: string }> = {};
   for (const person of PEOPLE) {
-    const user = await prisma.user.create({
-      data: {
+    const membership = {
+      organizationId,
+      role: person.role,
+      createdAt: new Date(now - 90 * DAY),
+    };
+    const user = await prisma.user.upsert({
+      where: { email: emailFor(person.key) },
+      update: { memberships: { create: membership } },
+      create: {
         name: person.name,
         email: emailFor(person.key),
         passwordHash,
         timezone: TIMEZONE,
         createdAt: new Date(now - 90 * DAY),
-        memberships: {
-          create: {
-            organizationId,
-            role: person.role,
-            createdAt: new Date(now - 90 * DAY),
-          },
-        },
+        memberships: { create: membership },
       },
     });
     users[person.key] = { id: user.id, name: user.name };
@@ -147,7 +153,7 @@ async function main() {
         tokenHash: createHash('sha256').update(randomBytes(32)).digest('hex'),
         expiresAt: new Date(now + 6 * DAY),
         organizationId,
-        invitedById: users.aarav.id,
+        invitedById: users.priyanshu.id,
       },
       {
         email: 'delivered+omar@resend.dev',
@@ -186,7 +192,7 @@ async function main() {
       organizationId,
       teamId: teams['Platform Team'],
       participants: {
-        create: ['aarav', 'rahul', 'sneha', 'amit'].map((key, position) => ({
+        create: ['priyanshu', 'rahul', 'sneha', 'amit'].map((key, position) => ({
           userId: users[key].id,
           position,
         })),
@@ -222,7 +228,7 @@ async function main() {
       organizationId,
       teamId: teams['Infrastructure'],
       participants: {
-        create: ['amit', 'daniel', 'aarav'].map((key, position) => ({
+        create: ['amit', 'daniel', 'priyanshu'].map((key, position) => ({
           userId: users[key].id,
           position,
         })),
@@ -246,7 +252,7 @@ async function main() {
       },
     },
   });
-  policies['Platform Critical'] = { id: platformPolicy.id, steps: 3, responders: ['aarav', 'rahul', 'sneha', 'amit'] };
+  policies['Platform Critical'] = { id: platformPolicy.id, steps: 3, responders: ['priyanshu', 'rahul', 'sneha', 'amit'] };
 
   const paymentsPolicy = await prisma.escalationPolicy.create({
     data: {
@@ -271,12 +277,12 @@ async function main() {
       steps: {
         create: [
           { position: 1, delayMinutes: 15, targetType: 'SCHEDULE', scheduleId: infraWeekly.id },
-          { position: 2, delayMinutes: 30, targetType: 'USER', userId: users.aarav.id },
+          { position: 2, delayMinutes: 30, targetType: 'USER', userId: users.priyanshu.id },
         ],
       },
     },
   });
-  policies['Infrastructure Default'] = { id: infraPolicy.id, steps: 2, responders: ['amit', 'daniel', 'aarav'] };
+  policies['Infrastructure Default'] = { id: infraPolicy.id, steps: 2, responders: ['amit', 'daniel', 'priyanshu'] };
 
   const services: Record<string, { id: string; policy: string }> = {};
   const apiKeys: { service: string; key: string }[] = [];
@@ -508,7 +514,8 @@ async function main() {
   console.log(`  ${PEOPLE.length} people, ${TEAMS.length} teams, 3 schedules, 3 escalation policies`);
   console.log(`  ${SERVICES.length} services, ${INCIDENT_COUNT} incidents, ${notificationCount} notifications`);
   console.log('');
-  console.log('Log in with any of these (same password for all):');
+  console.log('Log in with any of these (same password for all; an owner account that');
+  console.log('already existed keeps the password it had):');
   for (const person of PEOPLE) {
     console.log(`  ${person.role.padEnd(9)} ${emailFor(person.key)}`);
   }

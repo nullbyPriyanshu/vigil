@@ -1,34 +1,24 @@
 import type { ReactNode } from "react";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
-import { AuthShowcase } from "@/components/auth/auth-showcase";
+import { VigilMark } from "@/components/logo";
 import { Navbar } from "@/components/navbar";
-import { SpotlightBackdrop } from "@/components/spotlight-backdrop";
 
-// Shared chrome for auth pages (signup, login, ...): the navbar over a
-// two-column split on wide screens, a static incident timeline on the left and
-// the page's form on the right. Phones get the form alone. The form
-// sits straight on the page surface (no card), so the layout itself does
-// the framing. Pulled out so every auth page doesn't have to re-implement
-// the same layout.
+// Shared frame for the auth pages (login, signup, password reset): the
+// navbar, then the logo and the page's form centred on a plain background.
 export function AuthBackground({ children }: { children: ReactNode }) {
   return (
-    <SpotlightBackdrop variant="landing" className="h-dvh">
-      <AuthIllustration />
+    <div className="flex min-h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
       {/* No login/user section here: these pages are only reachable while
           logged out, and the page itself already has the login/signup form. */}
       <Navbar showAuth={false} />
 
-      <div className="relative grid min-h-0 flex-1 lg:grid-cols-2">
-        <div
-          aria-hidden
-          className="relative hidden border-r border-border lg:block"
-        >
-          <AuthShowcase />
-        </div>
-        <div className="flex items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
-          <div className="w-full max-w-[400px]">{children}</div>
+      <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+        {/* The headline and the line under the form are centred; the form
+            fields themselves stay left-aligned. */}
+        <div className="w-full max-w-[400px] [&_h1]:text-center [&_h1+p]:text-center [&>p]:text-center">
+          <VigilMark className="mx-auto mb-7 size-10" />
+          {children}
         </div>
       </div>
-    </SpotlightBackdrop>
+    </div>
   );
 }

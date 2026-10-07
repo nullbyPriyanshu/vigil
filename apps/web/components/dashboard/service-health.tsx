@@ -53,8 +53,12 @@ export function ServiceHealth() {
       ) : services.length === 0 ? (
         <CardContent>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            No services yet. Add one to start receiving alerts.
+            No services yet. A service is something that can break, like an
+            API or a database.
           </p>
+          <Link href="/services" className="mt-3 inline-flex items-center gap-1 rounded-md text-sm font-medium text-zinc-900 underline decoration-black/20 underline-offset-4 outline-none hover:decoration-black/60 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:text-zinc-100 dark:decoration-white/25 dark:hover:decoration-white/70">
+            Add a service
+          </Link>
         </CardContent>
       ) : (
         <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">

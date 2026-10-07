@@ -97,7 +97,7 @@ export default function MembersPage() {
                           name={member.name}
                           className="size-8 text-[11px]"
                         />
-                        <div className="max-w-44 min-w-0 sm:max-w-none">
+                        <div className="min-w-0">
                           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
                             <span className="truncate">{member.name}</span>
                             {member.userId === session?.user.id && (
@@ -106,10 +106,10 @@ export default function MembersPage() {
                               </span>
                             )}
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            <span className="sm:hidden">
-                              {ROLE_LABELS[member.role]} ·{" "}
-                            </span>
+                          <p className="text-xs text-muted-foreground sm:hidden">
+                            {ROLE_LABELS[member.role]}
+                          </p>
+                          <p className="text-xs break-all text-muted-foreground sm:truncate sm:break-normal">
                             {member.email}
                           </p>
                         </div>

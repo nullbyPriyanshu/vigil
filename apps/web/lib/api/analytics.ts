@@ -7,6 +7,8 @@ export type AnalyticsSummary = {
   openTriggered: number;
   openAcknowledged: number;
   totalIncidents: number;
+  // The same number of days just before this period, to compare against.
+  previousTotalIncidents: number;
   // Seconds. null when nothing was acknowledged / resolved in the period.
   mttaSeconds: number | null;
   mttrSeconds: number | null;

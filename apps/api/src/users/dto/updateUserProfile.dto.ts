@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsOptional,
   IsString,
   IsTimeZone,
@@ -22,4 +23,8 @@ export class UpdateUserProfileDto {
     message: 'Timezone must be a valid IANA timezone, e.g. Asia/Kolkata',
   })
   timezone?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  emailNotifications?: boolean;
 }

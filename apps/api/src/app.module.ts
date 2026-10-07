@@ -26,16 +26,26 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { DemoModule } from './demo/demo.module';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
-import { getRedisConnection } from './redis/redisConnection';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: getRedisConnection(config.get<string>('REDIS_URL')),
-      }),
+      useFactory: (config: ConfigService) => {
+        const url = new URL(
+          config.get<string>('REDIS_URL') ?? 'redis://localhost:6379',
+        );
+
+        return {
+          connection: {
+            host: url.hostname,
+            port: Number(url.port || 6379),
+            password: url.password || undefined,
+            db: url.pathname.length > 1 ? Number(url.pathname.slice(1)) : 0,
+          },
+        };
+      },
     }),
     RedisModule,
     PrismaModule,

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -9,7 +10,9 @@ import * as bcrypt from 'bcrypt';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from './auth.service';
-import { hashToken } from './utils/tokens';
+
+const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 // @nestjs/jwt v12 and @nestjs/config v12 are published as ES modules, which
 // Jest (CommonJS) can't load. We don't need the real ones here, so swap in

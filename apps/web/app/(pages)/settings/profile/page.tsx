@@ -6,6 +6,7 @@ import {
   SettingsPageTitle,
   SettingsSection,
 } from "@/components/settings/settings-section";
+import { NotificationsForm } from "@/components/settings/notifications-form";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +47,17 @@ export default function ProfileSettingsPage() {
             </div>
           ) : (
             <ProfileForm profile={profile} />
+          )}
+        </SettingsSection>
+
+        <SettingsSection
+          title="Notifications"
+          description="How Vigil reaches you when an incident needs you."
+        >
+          {isLoading || !profile ? (
+            <Skeleton className="h-12 w-full" />
+          ) : (
+            <NotificationsForm profile={profile} />
           )}
         </SettingsSection>
 

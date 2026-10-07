@@ -1,8 +1,8 @@
-// Landing-page footer: copyright on the left, GitHub and About us on the
-// right. Same border and surface as the navbar so the page is framed by
-// matching chrome top and bottom. The right-hand items are placeholders
-// for now: plain buttons with no action until there's somewhere for them
-// to go.
+import Link from "next/link";
+
+// Landing-page footer: copyright on the left, the GitHub repository and
+// the About page on the right. Same border and surface as the navbar so
+// the page is framed by matching chrome top and bottom.
 export function SiteFooter() {
   const item =
     "cursor-pointer rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:outline-none";
@@ -14,12 +14,18 @@ export function SiteFooter() {
           © {new Date().getFullYear()} Vigil. All rights reserved.
         </p>
         <div className="flex items-center gap-5">
-          <button type="button" aria-label="GitHub" className={item}>
+          <Link
+            href="https://github.com/nullbyPriyanshu/vigil"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Vigil on GitHub"
+            className={item}
+          >
             <GitHubMark className="size-4" />
-          </button>
-          <button type="button" className={`${item} text-xs`}>
-            About us
-          </button>
+          </Link>
+          <Link href="/about" className={`${item} text-xs`}>
+            About
+          </Link>
         </div>
       </div>
     </footer>

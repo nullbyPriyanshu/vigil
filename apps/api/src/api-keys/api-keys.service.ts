@@ -1,8 +1,8 @@
+import { createHash, randomBytes } from 'crypto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MembersService } from 'src/members/members.service';
 import { PrismaService } from 'src/prisma.service';
 import { CreateApiKeyDto } from './dto/createApiKey.dto';
-import { generateApiKey, hashApiKey } from './utils/apiKey';
 
 @Injectable()
 export class ApiKeysService {
@@ -41,13 +41,13 @@ export class ApiKeysService {
     await this.membersService.assertCanManageMembers(userId, organizationId);
     await this.findServiceOrThrow(organizationId, serviceId);
 
-    const { key, prefix } = generateApiKey();
+    const { key, prefix } = this.generateApiKey();
 
     const apiKey = await this.prisma.apiKey.create({
       data: {
         name: dto.name,
         prefix,
-        keyHash: hashApiKey(key),
+        keyHash: this.hashApiKey(key),
         serviceId,
       },
     });
@@ -91,7 +91,7 @@ export class ApiKeysService {
 
   async findActiveKey(key: string) {
     const apiKey = await this.prisma.apiKey.findUnique({
-      where: { keyHash: hashApiKey(key) },
+      where: { keyHash: this.hashApiKey(key) },
       include: { service: true },
     });
 
@@ -121,5 +121,25 @@ export class ApiKeysService {
       throw new NotFoundException('Service not found');
     }
     return service;
+  }
+
+  generateApiKey() {
+    const random = randomBytes(24).toString('hex');
+
+    return {
+      key: `vgl_live_${random}`,
+      prefix: random.slice(0, 8),
+    };
+  }
+
+  hashApiKey(key: string) {
+    const pepper = process.env.API_KEY_PEPPER;
+    if (!pepper) {
+      throw new Error('API_KEY_PEPPER is missing from .env');
+    }
+
+    return createHash('sha256')
+      .update(key + pepper)
+      .digest('hex');
   }
 }

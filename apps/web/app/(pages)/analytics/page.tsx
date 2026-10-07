@@ -46,6 +46,17 @@ const SEVERITIES = [
   { key: "LOW", label: "Low", bar: "bg-slate-400" },
 ] as const;
 
+// "Up 12% on the previous 30 days", in words instead of an arrow.
+function comparePeriods(now: number, before: number, days: number) {
+  const previous = `the previous ${days} days`;
+  if (before === 0) {
+    return now === 0 ? `None in ${previous} either` : `None in ${previous}`;
+  }
+  const change = Math.round(((now - before) / before) * 100);
+  if (change === 0) return `Same as ${previous} (${before})`;
+  return `${change > 0 ? "Up" : "Down"} ${Math.abs(change)}% on ${previous} (${before})`;
+}
+
 export default function AnalyticsPage() {
   const [days, setDays] = useState<AnalyticsDays>(30);
 
@@ -117,6 +128,15 @@ export default function AnalyticsPage() {
               label="Incidents"
               value={summary.totalIncidents}
               icon={SirenIcon}
+              footer={
+                <p className="mt-3 text-xs text-zinc-500">
+                  {comparePeriods(
+                    summary.totalIncidents,
+                    summary.previousTotalIncidents,
+                    days,
+                  )}
+                </p>
+              }
             />
             <StatCard
               label="Time to acknowledge"

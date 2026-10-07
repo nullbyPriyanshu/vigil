@@ -427,13 +427,15 @@ export class SchedulesService {
       return null;
     }
 
-    const participant =
-      schedule.participants[shift.number % schedule.participants.length];
+    const count = schedule.participants.length;
+    const participant = schedule.participants[shift.number % count];
+    const next = schedule.participants[(shift.number + 1) % count];
 
     return {
       userId: participant.userId,
       name: participant.user.name,
       until: shift.end,
+      nextName: count > 1 ? next.user.name : null,
     };
   }
 

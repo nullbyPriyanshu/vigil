@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   ConflictException,
   GoneException,
@@ -5,10 +6,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { hashToken } from '../auth/utils/tokens';
 import { IncidentsService } from '../incidents/incidents.service';
 import { PrismaService } from '../prisma.service';
 import { ActionLinksService } from './action-links.service';
+
+const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 jest.mock('@nestjs/config', () => ({ ConfigService: class {} }));
 jest.mock('../incidents/incidents.service', () => ({

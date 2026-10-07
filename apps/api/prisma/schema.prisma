@@ -17,6 +17,8 @@ model User {
   timezone     String   @default("Asia/Kolkata")
   createdAt    DateTime @default(now())
 
+  emailNotifications Boolean @default(true)
+
   memberships           Membership[]
   refreshTokens         RefreshToken[]
   passwordResets        PasswordResetToken[]

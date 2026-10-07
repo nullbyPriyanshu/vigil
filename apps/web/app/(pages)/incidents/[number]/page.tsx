@@ -27,6 +27,8 @@ import {
 } from "@/lib/api/incidents";
 import { formatMinutes, formatRepeat } from "@/lib/duration";
 import { formatDateTime } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import { useShortcut } from "@/lib/use-shortcut";
 
 const linkClass =
   "rounded-sm text-foreground underline decoration-black/20 underline-offset-4 outline-none hover:decoration-black/60 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:decoration-white/25 dark:hover:decoration-white/70";
@@ -102,6 +104,15 @@ export default function IncidentPage({
     },
   });
 
+  // A acknowledges, R opens the resolve box.
+  const canAct = canRespond && !!incident && incident.status !== "RESOLVED";
+  useShortcut(
+    "a",
+    () => acknowledge.mutate(),
+    canAct && incident?.status === "TRIGGERED" && !acknowledge.isPending,
+  );
+  useShortcut("r", () => setResolving(true), canAct);
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -156,8 +167,37 @@ export default function IncidentPage({
   }
   const open = incident.status !== "RESOLVED";
 
+  // The same two buttons are shown beside the title on wide screens and in
+  // a bar fixed to the bottom on phones. The letters are the shortcuts.
+  const keyHint =
+    "ml-1 hidden rounded border border-current/25 px-1 font-mono text-[10px] leading-4 opacity-60 lg:inline";
+  const actions = (
+    <>
+      {incident.status === "TRIGGERED" && (
+        <Button
+          variant="brand"
+          disabled={acknowledge.isPending}
+          onClick={() => acknowledge.mutate()}
+          className="h-11 flex-1 px-3.5 sm:h-9 sm:flex-none"
+        >
+          {acknowledge.isPending && <Loader2 className="size-4 animate-spin" />}
+          Acknowledge
+          <kbd className={keyHint}>A</kbd>
+        </Button>
+      )}
+      <Button
+        variant={incident.status === "ACKNOWLEDGED" ? "brand" : "outline"}
+        onClick={() => setResolving(true)}
+        className="h-11 flex-1 px-3.5 sm:h-9 sm:flex-none"
+      >
+        Resolve
+        <kbd className={keyHint}>R</kbd>
+      </Button>
+    </>
+  );
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn("flex flex-col gap-6", canRespond && open && "pb-20 sm:pb-0")}>
       <BackToIncidents />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -180,28 +220,7 @@ export default function IncidentPage({
         </div>
 
         {canRespond && open && (
-          <div className="flex shrink-0 gap-2">
-            {incident.status === "TRIGGERED" && (
-              <Button
-                variant="brand"
-                disabled={acknowledge.isPending}
-                onClick={() => acknowledge.mutate()}
-                className="h-9 px-3.5"
-              >
-                {acknowledge.isPending && (
-                  <Loader2 className="size-4 animate-spin" />
-                )}
-                Acknowledge
-              </Button>
-            )}
-            <Button
-              variant={incident.status === "ACKNOWLEDGED" ? "brand" : "outline"}
-              onClick={() => setResolving(true)}
-              className="h-9 px-3.5"
-            >
-              Resolve
-            </Button>
-          </div>
+          <div className="hidden shrink-0 gap-2 sm:flex">{actions}</div>
         )}
       </div>
 
@@ -315,6 +334,14 @@ export default function IncidentPage({
           </Card>
         </div>
       </div>
+
+      {/* Phones: the buttons stay within reach of a thumb however far the
+          page is scrolled. */}
+      {canRespond && open && (
+        <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-black/[0.08] bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden dark:border-white/[0.08] dark:bg-[#050505]">
+          {actions}
+        </div>
+      )}
 
       {resolving && (
         <ResolveIncidentDialog

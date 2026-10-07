@@ -1,6 +1,6 @@
+import { createHash } from 'crypto';
 import { GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { hashToken } from 'src/auth/utils/tokens';
 import { IncidentsService } from 'src/incidents/incidents.service';
 import { PrismaService } from 'src/prisma.service';
 
@@ -68,7 +68,7 @@ export class ActionLinksService {
 
   private async findUsableToken(token: string) {
     const actionToken = await this.prisma.actionToken.findUnique({
-      where: { tokenHash: hashToken(token) },
+      where: { tokenHash: this.hashToken(token) },
       include: { user: true, incident: { include: { service: true } } },
     });
 
@@ -83,5 +83,9 @@ export class ActionLinksService {
     }
 
     return actionToken;
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

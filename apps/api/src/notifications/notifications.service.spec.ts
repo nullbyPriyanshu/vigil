@@ -1,9 +1,12 @@
+import { createHash } from 'crypto';
 import { Test } from '@nestjs/testing';
-import { hashToken } from '../auth/utils/tokens';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma.service';
 import { SchedulesService } from '../schedules/schedules.service';
 import { NotificationsService } from './notifications.service';
+
+const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 jest.mock('../mail/mail.service', () => ({ MailService: class {} }));
 
@@ -154,6 +157,24 @@ describe('NotificationsService', () => {
       data: expect.objectContaining({
         message:
           'Nobody is on call for this schedule. Notifying the admins instead',
+      }) as unknown,
+    });
+  });
+
+  it('skips someone who turned incident emails off, and says so', async () => {
+    prisma.incident.findUnique.mockResolvedValue(incident({ userId: 'u2' }));
+    prisma.user.findUnique.mockResolvedValue({
+      ...RAHUL,
+      emailNotifications: false,
+    });
+
+    await service.notifyStep('i1', 1);
+
+    expect(mail.sendIncidentEmail).not.toHaveBeenCalled();
+    expect(prisma.incidentEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'NOTIFICATION_FAILED',
+        message: 'Rahul Verma has incident emails turned off',
       }) as unknown,
     });
   });

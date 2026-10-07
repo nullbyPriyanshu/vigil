@@ -33,7 +33,7 @@ export function RecentActivity() {
           <p className="py-6 text-sm text-zinc-500">Loading…</p>
         ) : items.length === 0 ? (
           <p className="py-6 text-sm text-zinc-500">
-            Nothing yet. What happens to incidents shows up here.
+            Nothing yet. Once an incident opens, you&apos;ll see here who picked it up and who resolved it.
           </p>
         ) : (
           <ul className="grid gap-x-10 sm:grid-cols-2">

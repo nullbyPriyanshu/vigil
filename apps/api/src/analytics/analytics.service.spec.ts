@@ -94,6 +94,25 @@ describe('AnalyticsService', () => {
     });
   });
 
+  it('counts the incidents of the period just before this one', async () => {
+    prisma.incident.count.mockImplementation(
+      ({ where }: { where: { status?: string } }) => (where.status ? 0 : 9),
+    );
+
+    const summary = await service.getSummary('u1', 'o1', 7);
+
+    expect(summary.previousTotalIncidents).toBe(9);
+    expect(prisma.incident.count).toHaveBeenCalledWith({
+      where: {
+        organizationId: 'o1',
+        createdAt: {
+          gte: at('2025-12-29T18:30:00Z'),
+          lt: at('2026-01-05T18:30:00Z'),
+        },
+      },
+    });
+  });
+
   it("fills in every day, bucketed in the caller's timezone", async () => {
     const summary = await service.getSummary('u1', 'o1', 7);
 

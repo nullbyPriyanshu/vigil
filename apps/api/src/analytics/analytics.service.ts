@@ -29,6 +29,17 @@ export class AnalyticsService {
       where: { organizationId, status: 'ACKNOWLEDGED' },
     });
 
+    const firstDay = this.getFirstDay(days, timezone);
+    const previousTotalIncidents = await this.prisma.incident.count({
+      where: {
+        organizationId,
+        createdAt: {
+          gte: firstDay.minus({ days }).toJSDate(),
+          lt: firstDay.toJSDate(),
+        },
+      },
+    });
+
     const escalated = incidents.filter(
       (incident) =>
         incident.currentStepPosition > 1 || incident.escalationRound > 0,
@@ -39,6 +50,7 @@ export class AnalyticsService {
       openTriggered,
       openAcknowledged,
       totalIncidents: incidents.length,
+      previousTotalIncidents,
       mttaSeconds: this.getMtta(incidents),
       mttrSeconds: this.getMttr(incidents),
       escalationRate:
@@ -96,15 +108,19 @@ export class AnalyticsService {
     return user ? user.timezone : 'UTC';
   }
 
+  private getFirstDay(days: number, timezone: string) {
+    return DateTime.now()
+      .setZone(timezone)
+      .startOf('day')
+      .minus({ days: days - 1 });
+  }
+
   private findIncidents(
     organizationId: string,
     days: number,
     timezone: string,
   ) {
-    const firstDay = DateTime.now()
-      .setZone(timezone)
-      .startOf('day')
-      .minus({ days: days - 1 });
+    const firstDay = this.getFirstDay(days, timezone);
 
     return this.prisma.incident.findMany({
       where: { organizationId, createdAt: { gte: firstDay.toJSDate() } },

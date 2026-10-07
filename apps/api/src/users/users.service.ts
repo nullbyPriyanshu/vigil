@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   BadRequestException,
   Injectable,
@@ -7,7 +8,6 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { BCRYPT_ROUNDS } from 'src/auth/auth.constants';
-import { hashToken } from 'src/auth/utils/tokens';
 import { MailService } from 'src/mail/mail.service';
 import { UpdateUserProfileDto } from './dto/updateUserProfile.dto';
 import { UpdateUserPasswordDto } from './dto/updateUserPassword.dto';
@@ -28,7 +28,11 @@ export class UsersService {
   }
 
   async updateUserProfile(userId: string, dto: UpdateUserProfileDto) {
-    if (dto.name === undefined && dto.timezone === undefined) {
+    if (
+      dto.name === undefined &&
+      dto.timezone === undefined &&
+      dto.emailNotifications === undefined
+    ) {
       throw new BadRequestException('Nothing to update');
     }
 
@@ -39,6 +43,7 @@ export class UsersService {
       data: {
         name: dto.name,
         timezone: dto.timezone,
+        emailNotifications: dto.emailNotifications,
       },
     });
 
@@ -78,7 +83,7 @@ export class UsersService {
         where: {
           userId,
           ...(currentRefreshToken && {
-            tokenHash: { not: hashToken(currentRefreshToken) },
+            tokenHash: { not: this.hashToken(currentRefreshToken) },
           }),
         },
       }),
@@ -117,6 +122,7 @@ export class UsersService {
     name: string;
     email: string;
     timezone: string;
+    emailNotifications: boolean;
     createdAt: Date;
   }) {
     return {
@@ -124,7 +130,12 @@ export class UsersService {
       name: user.name,
       email: user.email,
       timezone: user.timezone,
+      emailNotifications: user.emailNotifications,
       createdAt: user.createdAt,
     };
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

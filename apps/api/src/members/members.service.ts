@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
-import { ROLE_ORDER, canManageMembers } from 'src/common/permissions';
+import { ROLE_ORDER } from 'src/common/permissions';
 import { Role } from 'src/generated/prisma/enums';
 import { UpdateMemberRoleDto } from './dto/updateMemberRole.dto';
 
@@ -131,7 +131,9 @@ export class MembersService {
       where: { userId_organizationId: { userId, organizationId } },
     });
 
-    if (!membership || !canManageMembers(membership.role)) {
+    const canManage =
+      membership?.role === 'OWNER' || membership?.role === 'ADMIN';
+    if (!canManage) {
       throw new ForbiddenException('Only owners and admins can manage members');
     }
   }

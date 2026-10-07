@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { SeverityBadge } from "@/components/shared/severity-badge";
 import { StatusDot } from "@/components/shared/status-dot";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/auth-context";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import {
   acknowledgeIncidentApi,
@@ -17,6 +18,8 @@ import {
 } from "@/lib/api/incidents";
 import { formatDateTime, timeAgo } from "@/lib/time";
 import { cn } from "@/lib/utils";
+
+type Click = { action: "acknowledge" | "resolve"; from: Incident["status"] };
 
 // Rows this new get a brief highlight, so an incident that just arrived
 // catches the eye.
@@ -27,13 +30,14 @@ const NEW_FOR_MS = 15 * 1000;
 // div rather than a real <a>, because it contains real buttons, and buttons
 // inside a link are invalid HTML).
 export function IncidentRow({
-  incident,
+  incident: saved,
   canRespond,
 }: {
   incident: Incident;
   canRespond: boolean;
 }) {
   const router = useRouter();
+  const { session } = useAuth();
   const queryClient = useQueryClient();
   // When this row first appeared on screen.
   const [shownAt] = useState(() => Date.now());
@@ -41,11 +45,11 @@ export function IncidentRow({
   const goToIncident = () => router.push(`/incidents/${incident.number}`);
 
   const mutation = useMutation({
-    mutationFn: (action: "acknowledge" | "resolve") =>
+    mutationFn: ({ action }: Click) =>
       action === "acknowledge"
-        ? acknowledgeIncidentApi(incident.id)
-        : resolveIncidentApi(incident.id),
-    onSuccess: (_, action) => {
+        ? acknowledgeIncidentApi(saved.id)
+        : resolveIncidentApi(saved.id),
+    onSuccess: (_, { action }) => {
       toast.success(
         `INC-${incident.number} ${action === "acknowledge" ? "acknowledged" : "resolved"}`,
       );
@@ -66,10 +70,26 @@ export function IncidentRow({
   });
 
   // Stops the click from also opening the incident.
-  const act = (action: "acknowledge" | "resolve") => (e: React.MouseEvent) => {
+  const act = (action: Click["action"]) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    mutation.mutate(action);
+    mutation.mutate({ action, from: saved.status });
   };
+
+  // Show the row as acknowledged or resolved the moment the button is
+  // pressed, without waiting for the server. If the request fails, or the
+  // real data moves on, the row goes back to showing what was saved.
+  const click = mutation.variables;
+  const showClick =
+    click &&
+    (mutation.isPending || mutation.isSuccess) &&
+    saved.status === click.from;
+  const me = session ? { id: session.user.id, name: session.user.name } : null;
+  let incident = saved;
+  if (showClick && click.action === "acknowledge") {
+    incident = { ...saved, status: "ACKNOWLEDGED", acknowledgedBy: me };
+  } else if (showClick) {
+    incident = { ...saved, status: "RESOLVED", resolvedBy: me };
+  }
 
   let detail = `step ${Math.max(incident.currentStepPosition, 1)} of ${incident.totalSteps}`;
   if (incident.status === "ACKNOWLEDGED") {
@@ -101,7 +121,7 @@ export function IncidentRow({
         }
       }}
       className={cn(
-        "flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 px-(--card-spacing) py-3 outline-none transition-colors hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:-outline-offset-2 dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.02]",
+        "flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 px-(--card-spacing) py-3 outline-none transition-[background-color,opacity] duration-300 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:-outline-offset-2 dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.02]",
         isNew && "animate-row-flash",
       )}
     >
@@ -110,7 +130,7 @@ export function IncidentRow({
         INC-{incident.number}
       </span>
       {/* Fixed width so every title starts at the same place. */}
-      <div className="w-20 shrink-0">
+      <div className="w-14 shrink-0">
         <SeverityBadge severity={incident.severity} />
       </div>
 
