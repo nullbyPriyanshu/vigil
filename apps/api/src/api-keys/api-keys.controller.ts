@@ -18,7 +18,6 @@ import { CreateApiKeyDto } from './dto/createApiKey.dto';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-// A service's API keys. Owners and admins only, including reading the list.
 @Controller('services/:id/keys')
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('OWNER', 'ADMIN')

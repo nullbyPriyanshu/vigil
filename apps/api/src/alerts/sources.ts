@@ -1,96 +1,76 @@
-// Turns the webhook body of another tool into the body POST /alerts
-// expects ({ title, dedup_key, severity, status, description }). After that
-// it goes through exactly the same checks and steps as any other alert.
-//
-// Each function returns null when the body doesn't look like that tool's
-// webhook at all.
+import { CreateAlertDto } from './dto/createAlert.dto';
 
-type Body = Record<string, unknown>;
-type AlertBody = {
-  title: string;
-  dedup_key: string;
-  severity: 'critical' | 'high' | 'low';
-  status: 'triggered' | 'resolved';
-  description?: string;
+type SentryBody = {
+  action?: string;
+  data?: {
+    issue?: { id?: string; title?: string; level?: string; culprit?: string };
+  };
 };
 
-const asObject = (value: unknown): Body | null =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Body)
-    : null;
-
-// Text or a number as text; anything else is treated as missing.
-const asText = (value: unknown): string | undefined => {
-  if (typeof value === 'string' && value.trim() !== '') return value.trim();
-  if (typeof value === 'number') return String(value);
-  return undefined;
+type GrafanaBody = {
+  status?: string;
+  title?: string;
+  message?: string;
+  groupKey?: string;
+  commonLabels?: { severity?: string };
 };
 
-// Sentry sends { action, data: { issue } } or { action, data: { event } }.
-// One Sentry issue = one incident.
-function fromSentry(body: Body): AlertBody | null {
-  const data = asObject(body.data);
-  const item = asObject(data?.issue) ?? asObject(data?.event);
-  if (!item) return null;
+type UptimeRobotBody = {
+  monitorID?: string | number;
+  monitorFriendlyName?: string;
+  alertType?: string | number;
+  alertDetails?: string;
+};
 
-  const title = asText(item.title) ?? asText(item.message);
-  const id = asText(item.issue_id) ?? asText(item.id);
-  if (!title || !id) return null;
+export function fromSentry(body: SentryBody): CreateAlertDto | null {
+  const issue = body.data?.issue;
+  if (!issue || !issue.id || !issue.title) {
+    return null;
+  }
 
-  const level = asText(item.level);
+  let severity: 'critical' | 'high' | 'low' = 'low';
+  if (issue.level === 'fatal') severity = 'critical';
+  if (issue.level === 'error') severity = 'high';
+
   return {
-    title,
-    dedup_key: `sentry-${id}`,
-    severity:
-      level === 'fatal' ? 'critical' : level === 'error' ? 'high' : 'low',
+    title: String(issue.title),
+    dedup_key: `sentry-${issue.id}`,
+    severity,
     status: body.action === 'resolved' ? 'resolved' : 'triggered',
-    description: asText(item.culprit) ?? asText(item.web_url),
+    description: issue.culprit ? String(issue.culprit) : undefined,
   };
 }
 
-// Grafana sends one message per alert group:
-// { status: "firing" | "resolved", title, message, groupKey, commonLabels }.
-function fromGrafana(body: Body): AlertBody | null {
-  const labels = asObject(body.commonLabels) ?? {};
-  const title = asText(body.title) ?? asText(labels.alertname);
-  const groupKey = asText(body.groupKey) ?? asText(labels.alertname);
-  if (!title || !groupKey || !asText(body.status)) return null;
+export function fromGrafana(body: GrafanaBody): CreateAlertDto | null {
+  if (!body.status || !body.title || !body.groupKey) {
+    return null;
+  }
 
-  const severity = asText(labels.severity)?.toLowerCase();
+  let severity: 'critical' | 'high' | 'low' = 'high';
+  if (body.commonLabels?.severity === 'critical') severity = 'critical';
+  if (body.commonLabels?.severity === 'low') severity = 'low';
+
   return {
-    title,
-    dedup_key: `grafana-${groupKey}`,
-    severity:
-      severity === 'critical'
-        ? 'critical'
-        : severity === 'low'
-          ? 'low'
-          : 'high',
+    title: String(body.title),
+    dedup_key: `grafana-${body.groupKey}`,
+    severity,
     status: body.status === 'resolved' ? 'resolved' : 'triggered',
-    description: asText(body.message),
+    description: body.message ? String(body.message) : undefined,
   };
 }
 
-// UptimeRobot sends { monitorID, monitorFriendlyName, monitorURL,
-// alertType, alertDetails }. alertType 1 = down, 2 = back up.
-function fromUptimeRobot(body: Body): AlertBody | null {
-  const monitorId = asText(body.monitorID);
-  const alertType = asText(body.alertType);
-  if (!monitorId || !alertType) return null;
+export function fromUptimeRobot(body: UptimeRobotBody): CreateAlertDto | null {
+  if (!body.monitorID || !body.alertType) {
+    return null;
+  }
 
-  const name =
-    asText(body.monitorFriendlyName) ?? asText(body.monitorURL) ?? 'Monitor';
+  const name = body.monitorFriendlyName ?? 'Monitor';
+
   return {
     title: `${name} is down`,
-    dedup_key: `uptimerobot-${monitorId}`,
+    dedup_key: `uptimerobot-${body.monitorID}`,
     severity: 'critical',
-    status: alertType === '2' ? 'resolved' : 'triggered',
-    description: asText(body.alertDetails) ?? asText(body.monitorURL),
+    status: String(body.alertType) === '2' ? 'resolved' : 'triggered',
+    description: body.alertDetails ? String(body.alertDetails) : undefined,
   };
 }
-
-export const SOURCES: Record<string, (body: Body) => AlertBody | null> = {
-  sentry: fromSentry,
-  grafana: fromGrafana,
-  uptimerobot: fromUptimeRobot,
-};

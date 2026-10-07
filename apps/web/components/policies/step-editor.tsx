@@ -16,7 +16,7 @@ import {
 // the position sent to the API is the step's place in the array.
 export type StepDraft = {
   key: number;
-  targetType: "USER" | "TEAM";
+  targetType: "USER" | "TEAM" | "SCHEDULE";
   targetId: string;
   delayMinutes: string;
 };
@@ -24,9 +24,22 @@ export type StepDraft = {
 export type TargetOption = { value: string; label: string };
 
 const TYPE_ITEMS = [
+  { value: "SCHEDULE", label: "On-call" },
   { value: "USER", label: "Person" },
   { value: "TEAM", label: "Team" },
 ];
+
+const PLACEHOLDERS = {
+  USER: "Choose a person",
+  TEAM: "Choose a team",
+  SCHEDULE: "Choose a schedule",
+};
+
+const EMPTY = {
+  USER: "No one to pick yet",
+  TEAM: "No teams yet",
+  SCHEDULE: "No schedules yet",
+};
 
 export const MAX_STEPS = 20;
 
@@ -35,12 +48,16 @@ export function StepEditor({
   onChange,
   people,
   teams,
+  schedules,
 }: {
   steps: StepDraft[];
   onChange: (steps: StepDraft[]) => void;
   people: TargetOption[];
   teams: TargetOption[];
+  schedules: TargetOption[];
 }) {
+  const optionsFor = { USER: people, TEAM: teams, SCHEDULE: schedules };
+
   const update = (key: number, changes: Partial<StepDraft>) =>
     onChange(
       steps.map((step) => (step.key === key ? { ...step, ...changes } : step)),
@@ -67,7 +84,7 @@ export function StepEditor({
     <div className="space-y-2">
       <ol className="space-y-2">
         {steps.map((step, index) => {
-          const options = step.targetType === "USER" ? people : teams;
+          const options = optionsFor[step.targetType];
           // A person or team that has since been removed isn't in the list.
           const known = options.some((o) => o.value === step.targetId);
 
@@ -153,20 +170,12 @@ export function StepEditor({
                     aria-label={`Step ${index + 1} target`}
                     className="w-full min-w-0 data-[size=default]:h-9"
                   >
-                    <SelectValue
-                      placeholder={
-                        step.targetType === "USER"
-                          ? "Choose a person"
-                          : "Choose a team"
-                      }
-                    />
+                    <SelectValue placeholder={PLACEHOLDERS[step.targetType]} />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false} className="max-h-60">
                     {options.length === 0 ? (
                       <p className="px-2 py-1.5 text-sm text-muted-foreground">
-                        {step.targetType === "USER"
-                          ? "No one to pick yet"
-                          : "No teams yet"}
+                        {EMPTY[step.targetType]}
                       </p>
                     ) : (
                       options.map((item) => (

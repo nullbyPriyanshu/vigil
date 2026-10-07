@@ -22,8 +22,6 @@ import { UpdateEscalationPolicyDto } from './dto/updateEscalationPolicy.dto';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-// Everyone in the organization can see policies; only owners and admins
-// can change them.
 @Controller('escalation-policies')
 @UseGuards(AuthGuard, RolesGuard)
 export class EscalationPoliciesController {

@@ -5,6 +5,7 @@ import { PASSWORD_RESET_TTL_MS } from 'src/auth/auth.constants';
 import {
   type Email,
   forgotPasswordEmail,
+  incidentEmail,
   invitationEmail,
   passwordChangedEmail,
   passwordResetEmail,
@@ -97,6 +98,47 @@ export class MailService {
         expiresInDays: opts.expiresInDays,
       }),
     );
+  }
+
+  sendIncidentEmail(
+    email: string,
+    opts: {
+      name: string;
+      incidentNumber: number;
+      title: string;
+      severity: string;
+      serviceName: string;
+      acknowledgeToken: string;
+      resolveToken: string;
+    },
+  ) {
+    return this.send(
+      email,
+      incidentEmail({
+        name: opts.name,
+        incidentNumber: opts.incidentNumber,
+        title: opts.title,
+        severity: opts.severity,
+        serviceName: opts.serviceName,
+        acknowledgeUrl: `${this.frontendUrl}/a/${opts.acknowledgeToken}`,
+        resolveUrl: `${this.frontendUrl}/a/${opts.resolveToken}`,
+        incidentUrl: `${this.frontendUrl}/incidents/${opts.incidentNumber}`,
+      }),
+    );
+  }
+
+  verifyWebhook(
+    payload: string,
+    headers: { id: string; timestamp: string; signature: string },
+  ) {
+    const webhookSecret = this.configService.get<string>(
+      'RESEND_WEBHOOK_SECRET',
+    );
+    if (!webhookSecret) {
+      throw new Error('RESEND_WEBHOOK_SECRET is missing from .env');
+    }
+
+    return this.resend.webhooks.verify({ payload, headers, webhookSecret });
   }
 
   private forgotUrl() {

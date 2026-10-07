@@ -30,10 +30,13 @@ import { getApiErrorMessage } from "@/lib/api/errors";
 import { getPoliciesApi } from "@/lib/api/policies";
 import {
   createServiceApi,
+  createServiceWithDefaultPolicyApi,
   updateServiceApi,
   type Service,
 } from "@/lib/api/services";
 import { getTeamsApi } from "@/lib/api/teams";
+
+const DEFAULT_POLICY = "DEFAULT";
 
 // Creates a service, or edits one when `service` is given. In edit mode it
 // is also the way in to deleting it.
@@ -53,7 +56,7 @@ export function ServiceFormDialog({
   const [description, setDescription] = useState(service?.description ?? "");
   const [teamId, setTeamId] = useState<string | null>(service?.team.id ?? null);
   const [policyId, setPolicyId] = useState<string | null>(
-    service?.escalationPolicy.id ?? null,
+    service?.escalationPolicy.id ?? DEFAULT_POLICY,
   );
   const [autoResolve, setAutoResolve] = useState(
     service?.autoResolveMinutes ? String(service.autoResolveMinutes) : "",
@@ -74,10 +77,12 @@ export function ServiceFormDialog({
   });
 
   const teamItems = (teams ?? []).map((t) => ({ value: t.id, label: t.name }));
-  const policyItems = (policies ?? []).map((p) => ({
-    value: p.id,
-    label: p.name,
-  }));
+  // When creating, the first choice makes a simple policy for you: it
+  // notifies everyone on the team. It can be edited afterwards.
+  const policyItems = [
+    ...(service ? [] : [{ value: DEFAULT_POLICY, label: "Create a default one" }]),
+    ...(policies ?? []).map((p) => ({ value: p.id, label: p.name })),
+  ];
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -88,6 +93,21 @@ export function ServiceFormDialog({
         escalationPolicyId: policyId as string,
         autoResolveMinutes: autoResolve === "" ? null : Number(autoResolve),
       };
+      if (!service && policyId === DEFAULT_POLICY) {
+        const created = await createServiceWithDefaultPolicyApi({
+          name: body.name,
+          teamId: body.teamId,
+        });
+        // The quick path only takes a name and a team; add the rest after.
+        if (body.description || body.autoResolveMinutes) {
+          await updateServiceApi(created.data.service.id, {
+            description: body.description,
+            autoResolveMinutes: body.autoResolveMinutes,
+          });
+        }
+        return created.data.service;
+      }
+
       const response = service
         ? await updateServiceApi(service.id, body)
         : await createServiceApi(body);
@@ -150,8 +170,7 @@ export function ServiceFormDialog({
 
   const loaded = teams !== undefined && policies !== undefined;
   // A service can't exist without both of these.
-  const missing =
-    loaded && (teams.length === 0 || policies.length === 0) && !service;
+  const missing = loaded && teams.length === 0 && !service;
 
   return (
     <Dialog
@@ -172,25 +191,16 @@ export function ServiceFormDialog({
         {missing ? (
           <div className="rounded-lg border border-black/[0.08] px-3.5 py-3 text-sm dark:border-white/[0.08]">
             <p className="font-medium text-foreground">
-              A service needs a team and an escalation policy
+              A service needs a team
             </p>
             <p className="mt-1 text-muted-foreground">
-              {teams.length === 0 && (
-                <>
-                  <Link href="/teams" className="text-foreground underline underline-offset-4">
-                    Create a team
-                  </Link>
-                  {policies.length === 0 ? " and " : " first."}
-                </>
-              )}
-              {policies.length === 0 && (
-                <>
-                  <Link href="/policies" className="text-foreground underline underline-offset-4">
-                    {teams.length === 0 ? "an escalation policy" : "Create an escalation policy"}
-                  </Link>
-                  {" first."}
-                </>
-              )}
+              <Link
+                href="/teams"
+                className="text-foreground underline underline-offset-4"
+              >
+                Create a team
+              </Link>{" "}
+              first, then come back.
             </p>
           </div>
         ) : (

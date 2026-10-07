@@ -42,8 +42,6 @@ export class InvitationsController {
       req.user.organizationId,
       dto,
     );
-    // 201 when an invitation was created, 200 when there was nothing to
-    // create because they're already a member.
     res.status('alreadyMember' in result ? HttpStatus.OK : HttpStatus.CREATED);
     return result;
   }
@@ -70,7 +68,6 @@ export class InvitationsController {
   }
 }
 
-// The invited person's side. Public, because they may not have an account.
 @Controller('invitations')
 export class PublicInvitationsController {
   constructor(private readonly invitationsService: InvitationsService) {}
@@ -92,8 +89,6 @@ export class PublicInvitationsController {
     const { accessToken, refreshToken, ...rest } =
       await this.invitationsService.acceptInvitation(token, dto, req.user);
 
-    // The web app logs in with cookies; the access token is also returned
-    // for clients that send it as a Bearer header instead.
     setAuthCookies(res, { accessToken, refreshToken });
     return { accessToken, ...rest };
   }

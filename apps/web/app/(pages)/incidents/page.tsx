@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { SirenIcon } from "lucide-react";
 
+import { IncidentRow } from "@/components/incidents/incident-row";
+import { LiveBadge } from "@/components/incidents/live-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LoadError } from "@/components/shared/load-error";
 import { PageHeader } from "@/components/shared/page-header";
-import { SeverityBadge } from "@/components/shared/severity-badge";
-import { StatusDot } from "@/components/shared/status-dot";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -19,21 +21,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getIncidentsApi, type IncidentRow } from "@/lib/api/incidents";
+import { useAuth } from "@/context/auth-context";
+import { getIncidentsApi } from "@/lib/api/incidents";
 import { getServicesApi } from "@/lib/api/services";
-import { timeAgo } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import type { IncidentStatus, Severity } from "@/types/incident";
 
 const PAGE_SIZE = 25;
 
-// "ALL" stands for "no filter"; it is never sent to the API.
-const STATUS_ITEMS = [
-  { value: "ALL", label: "Any status" },
+const STATUS_TABS = [
+  { value: "ALL", label: "All" },
   { value: "TRIGGERED", label: "Triggered" },
   { value: "ACKNOWLEDGED", label: "Acknowledged" },
   { value: "RESOLVED", label: "Resolved" },
 ];
 
+// "ALL" stands for "no filter"; it is never sent to the API.
 const SEVERITY_ITEMS = [
   { value: "ALL", label: "Any severity" },
   { value: "CRITICAL", label: "Critical" },
@@ -41,18 +44,48 @@ const SEVERITY_ITEMS = [
   { value: "LOW", label: "Low" },
 ];
 
+// useSearchParams needs a Suspense boundary above it.
 export default function IncidentsPage() {
-  const [status, setStatus] = useState("ALL");
-  const [severity, setSeverity] = useState("ALL");
-  const [service, setService] = useState("ALL");
-  const [page, setPage] = useState(1);
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Incidents />
+    </Suspense>
+  );
+}
+
+function Incidents() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const { session } = useAuth();
+
+  // The filters live in the address (?status=TRIGGERED&page=2), so a reload
+  // or a shared link shows the same list.
+  const status = params.get("status") ?? "ALL";
+  const severity = params.get("severity") ?? "ALL";
+  const service = params.get("service") ?? "ALL";
+  const page = Number(params.get("page") ?? "1") || 1;
+
+  const setParams = (changes: Record<string, string>) => {
+    const next = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === "ALL" || value === "1") next.delete(key);
+      else next.set(key, value);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  // Changing a filter goes back to the first page.
+  const setFilter = (key: string) => (value: unknown) =>
+    setParams({ [key]: value as string, page: "1" });
 
   const { data: services } = useQuery({
     queryKey: ["services"],
     queryFn: async () => (await getServicesApi()).data.data,
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["incidents", { status, severity, service, page }],
     queryFn: async () =>
       (
@@ -66,8 +99,8 @@ export default function IncidentsPage() {
       ).data,
     // Keep showing the current rows while the next page or filter loads.
     placeholderData: keepPreviousData,
-    // There's no live connection yet, so ask again every 15 seconds.
-    refetchInterval: 15 * 1000,
+    // Live updates reload this list; the timer is only a safety net.
+    refetchInterval: 60 * 1000,
     staleTime: 0,
   });
 
@@ -77,54 +110,60 @@ export default function IncidentsPage() {
   ];
 
   const filtered = status !== "ALL" || severity !== "ALL" || service !== "ALL";
-
-  // Changing a filter goes back to the first page.
-  const changeFilter = (set: (value: string) => void) => (value: unknown) => {
-    set(value as string);
-    setPage(1);
-  };
-
-  const clearFilters = () => {
-    setStatus("ALL");
-    setSeverity("ALL");
-    setService("ALL");
-    setPage(1);
-  };
+  const canRespond = !!session && session.role !== "VIEWER";
+  const clearFilters = () => router.replace(pathname, { scroll: false });
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Incidents"
         description="Every problem your services have reported, newest first."
+        action={<LiveBadge />}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Filter
-          label="Status"
-          items={STATUS_ITEMS}
-          value={status}
-          onChange={changeFilter(setStatus)}
-        />
-        <Filter
-          label="Severity"
-          items={SEVERITY_ITEMS}
-          value={severity}
-          onChange={changeFilter(setSeverity)}
-        />
-        <Filter
-          label="Service"
-          items={serviceItems}
-          value={service}
-          onChange={changeFilter(setService)}
-        />
-        {filtered && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear
-          </Button>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          role="tablist"
+          aria-label="Status"
+          className="flex max-w-full overflow-x-auto rounded-lg border border-black/[0.08] p-0.5 dark:border-white/[0.08]"
+        >
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              role="tab"
+              aria-selected={status === tab.value}
+              onClick={() => setFilter("status")(tab.value)}
+              className={cn(
+                "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+                status === tab.value
+                  ? "bg-black/[0.06] font-medium text-foreground dark:bg-white/[0.08]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter
+            label="Severity"
+            items={SEVERITY_ITEMS}
+            value={severity}
+            onChange={setFilter("severity")}
+          />
+          <Filter
+            label="Service"
+            items={serviceItems}
+            value={service}
+            onChange={setFilter("service")}
+          />
+        </div>
       </div>
 
-      {isLoading || !data ? (
+      {isError && !data ? (
+        <LoadError what="the incidents" onRetry={() => refetch()} />
+      ) : isLoading || !data ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : data.data.length === 0 ? (
         <EmptyState
@@ -133,7 +172,7 @@ export default function IncidentsPage() {
           description={
             filtered
               ? "Try a different status, severity or service."
-              : "When a service sends an alert, the incident shows up here. Create an API key on a service to start sending."
+              : "When a service sends an alert, the incident shows up here. Open a service and press Send a test alert to try it."
           }
           action={
             filtered ? (
@@ -145,13 +184,15 @@ export default function IncidentsPage() {
         />
       ) : (
         <Card className="gap-0 py-0">
-          <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+          <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
             {data.data.map((incident) => (
-              <li key={incident.id}>
-                <IncidentListRow incident={incident} />
-              </li>
+              <IncidentRow
+                key={incident.id}
+                incident={incident}
+                canRespond={canRespond}
+              />
             ))}
-          </ul>
+          </div>
 
           <div className="flex items-center justify-between gap-4 border-t border-black/[0.06] px-(--card-spacing) py-3 dark:border-white/[0.06]">
             <p className="text-sm text-muted-foreground tabular-nums">
@@ -165,7 +206,7 @@ export default function IncidentsPage() {
                   variant="outline"
                   size="sm"
                   disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
+                  onClick={() => setParams({ page: String(page - 1) })}
                 >
                   Previous
                 </Button>
@@ -173,7 +214,7 @@ export default function IncidentsPage() {
                   variant="outline"
                   size="sm"
                   disabled={page >= data.meta.totalPages}
-                  onClick={() => setPage(page + 1)}
+                  onClick={() => setParams({ page: String(page + 1) })}
                 >
                   Next
                 </Button>
@@ -210,47 +251,5 @@ function Filter({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-function IncidentListRow({ incident }: { incident: IncidentRow }) {
-  // What happened to it last, in a few words.
-  const state =
-    incident.status === "RESOLVED"
-      ? `Resolved${incident.resolvedBy ? ` by ${incident.resolvedBy.name}` : ""}`
-      : incident.status === "ACKNOWLEDGED"
-        ? `Acknowledged${incident.acknowledgedBy ? ` by ${incident.acknowledgedBy.name}` : ""}`
-        : "Waiting for someone to acknowledge";
-
-  return (
-    <Link
-      href={`/incidents/${incident.number}`}
-      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-(--card-spacing) py-3 transition-colors outline-none hover:bg-black/[0.02] focus-visible:bg-black/[0.03] dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.03]"
-    >
-      <StatusDot status={incident.status} />
-      <span className="w-16 shrink-0 font-mono text-xs text-zinc-500">
-        INC-{incident.number}
-      </span>
-      {/* Fixed width so every title starts at the same place. */}
-      <div className="w-20 shrink-0">
-        <SeverityBadge severity={incident.severity} />
-      </div>
-
-      <div className="min-w-48 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-          {incident.title}
-        </p>
-        <p className="truncate text-xs text-zinc-500">
-          {incident.service.name} · {state}
-        </p>
-      </div>
-
-      <span className="hidden w-20 shrink-0 text-right text-sm text-muted-foreground tabular-nums md:block">
-        {incident.alertCount} {incident.alertCount === 1 ? "alert" : "alerts"}
-      </span>
-      <span className="w-16 shrink-0 text-right text-sm text-muted-foreground tabular-nums">
-        {timeAgo(incident.createdAt)}
-      </span>
-    </Link>
   );
 }

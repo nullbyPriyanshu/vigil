@@ -66,9 +66,12 @@ export type IncidentEvent = {
     | "CREATED"
     | "ACKNOWLEDGED"
     | "RESOLVED"
+    | "AUTO_RESOLVED"
     | "COMMENT"
     | "ESCALATED"
-    | "NOTIFICATION_SENT";
+    | "NOTIFICATION_SENT"
+    | "NOTIFICATION_DELIVERED"
+    | "NOTIFICATION_FAILED";
   actorType: "USER" | "SYSTEM" | "INTEGRATION";
   actor: Person | null;
   message: string;

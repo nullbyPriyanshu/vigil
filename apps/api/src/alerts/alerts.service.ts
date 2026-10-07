@@ -1,274 +1,179 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ApiKeysService } from 'src/api-keys/api-keys.service';
-import { Prisma } from 'src/generated/prisma/client';
+import { EscalationService } from 'src/escalation/escalation.service';
 import { PrismaService } from 'src/prisma.service';
-import { parseAlert, type AlertInput } from './alert.validation';
-import type { CurrentApiKey } from './apiKey.guard';
-import { SOURCES } from './sources';
+import { RealtimeService } from 'src/realtime/realtime.service';
+import { CreateAlertDto } from './dto/createAlert.dto';
 
-// What goes back to the sender. `created` decides between 201 and 200.
-export type IngestResult = {
-  created: boolean;
-  body: {
-    alert_id: string;
-    incident_id: string | null;
-    incident_number: number | null;
-    deduplicated?: boolean;
-    action?: 'resolved';
-  };
+export type AlertSource = {
+  id?: string;
+  serviceId: string;
+  organizationId: string;
 };
-
-// The database client inside a transaction.
-type Tx = Prisma.TransactionClient;
 
 @Injectable()
 export class AlertsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly apiKeysService: ApiKeysService,
+    private readonly escalationService: EscalationService,
+    private readonly realtimeService: RealtimeService,
   ) {}
 
-  // POST /alerts: the body is already in Vigil's own shape.
-  async ingestAlert(
-    apiKey: CurrentApiKey,
-    body: unknown,
+  async createAlert(
+    apiKey: AlertSource,
+    dto: CreateAlertDto,
+    payload: object,
     idempotencyKey?: string,
   ) {
-    const alert = parseAlert(body);
-    return this.ingest(apiKey, alert, body, idempotencyKey);
-  }
+    const serviceId = apiKey.serviceId;
+    const severity =
+      dto.severity === 'critical'
+        ? 'CRITICAL'
+        : dto.severity === 'low'
+          ? 'LOW'
+          : 'HIGH';
+    const status = dto.status === 'resolved' ? 'RESOLVED' : 'TRIGGERED';
+    const dedupKey = dto.dedup_key ?? null;
 
-  // POST /alerts/:source: translate another tool's webhook first.
-  async ingestFromSource(
-    apiKey: CurrentApiKey,
-    source: string,
-    body: unknown,
-    idempotencyKey?: string,
-  ) {
-    const translate = SOURCES[source.toLowerCase()];
-    if (!translate) {
-      throw new BadRequestException(
-        `Unsupported source "${source}". Use one of: ${Object.keys(SOURCES).join(', ')}`,
-      );
-    }
-
-    const isObject =
-      typeof body === 'object' && body !== null && !Array.isArray(body);
-    const translated = isObject
-      ? translate(body as Record<string, unknown>)
-      : null;
-    if (!translated) {
-      throw new BadRequestException(
-        `This doesn't look like a ${source} webhook payload`,
-      );
-    }
-
-    // The translated alert is checked like any other; the stored payload is
-    // still the tool's original body.
-    return this.ingest(apiKey, parseAlert(translated), body, idempotencyKey);
-  }
-
-  // The pipeline every alert goes through:
-  //   1. a retry of a request we've already handled gets the same answer
-  //   2. "resolved" closes the open incident with the same dedup key
-  //   3. "triggered" joins that open incident if there is one
-  //   4. otherwise it becomes a new incident
-  private async ingest(
-    apiKey: CurrentApiKey,
-    alert: AlertInput,
-    rawBody: unknown,
-    idempotencyKey?: string,
-  ): Promise<IngestResult> {
     const result = await this.prisma.$transaction(async (tx) => {
-      // Lock this service's row until the transaction ends. Two alerts for
-      // the same service now run one after the other, so they can't both
-      // decide "nothing is open" and create two incidents for one problem.
-      await tx.$queryRaw`SELECT id FROM "Service" WHERE id = ${apiKey.serviceId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Service" WHERE id = ${serviceId} FOR UPDATE`;
 
       if (idempotencyKey) {
-        const earlier = await this.findEarlierResult(
-          tx,
-          apiKey.serviceId,
-          idempotencyKey,
-        );
-        if (earlier) return earlier;
+        const sameRequest = await tx.alert.findFirst({
+          where: { serviceId, idempotencyKey },
+          include: { incident: true },
+        });
+        if (sameRequest) {
+          return {
+            alert: sameRequest,
+            incident: sameRequest.incident,
+            isNewIncident: false,
+          };
+        }
       }
 
-      // What every alert row has in common, whichever branch stores it.
-      const alertData = {
-        title: alert.title,
-        severity: alert.severity,
-        status: alert.status,
-        dedupKey: alert.dedupKey,
-        payload: rawBody as Prisma.InputJsonValue,
-        idempotencyKey: idempotencyKey ?? null,
-        serviceId: apiKey.serviceId,
-        apiKeyId: apiKey.id,
-      };
-
-      // An alert without a dedup key can't match anything.
-      const openIncident = alert.dedupKey
+      let incident = dedupKey
         ? await tx.incident.findFirst({
-            where: {
-              serviceId: apiKey.serviceId,
-              dedupKey: alert.dedupKey,
-              status: { not: 'RESOLVED' },
-            },
+            where: { serviceId, dedupKey, status: { not: 'RESOLVED' } },
           })
         : null;
+      let isNewIncident = false;
 
-      if (alert.status === 'RESOLVED') {
-        return this.resolveFromAlert(tx, alertData, openIncident);
+      if (status === 'RESOLVED') {
+        if (incident) {
+          await tx.incident.update({
+            where: { id: incident.id },
+            data: {
+              status: 'RESOLVED',
+              resolvedAt: new Date(),
+              nextEscalationAt: null,
+            },
+          });
+          await tx.incidentEvent.create({
+            data: {
+              incidentId: incident.id,
+              type: 'RESOLVED',
+              actorType: 'INTEGRATION',
+              message: 'Resolved by an alert from the monitoring tool',
+            },
+          });
+        }
+      } else if (incident) {
+        await tx.incident.update({
+          where: { id: incident.id },
+          data: { lastAlertAt: new Date() },
+        });
+      } else {
+        const organization = await tx.organization.update({
+          where: { id: apiKey.organizationId },
+          data: { incidentCounter: { increment: 1 } },
+        });
+
+        incident = await tx.incident.create({
+          data: {
+            number: organization.incidentCounter,
+            title: dto.title,
+            description: dto.description ?? null,
+            severity,
+            dedupKey,
+            organizationId: apiKey.organizationId,
+            serviceId,
+          },
+        });
+        isNewIncident = true;
+
+        await tx.incidentEvent.create({
+          data: {
+            incidentId: incident.id,
+            type: 'CREATED',
+            actorType: 'INTEGRATION',
+            message: 'Incident created from alert',
+          },
+        });
       }
-      if (openIncident) {
-        return this.attachToIncident(tx, alertData, openIncident);
-      }
-      return this.createIncident(tx, apiKey, alert, alertData);
-    });
 
-    await this.apiKeysService.markKeyUsed(apiKey.id);
-
-    return result;
-  }
-
-  // ---------- The four outcomes ----------
-
-  private async findEarlierResult(
-    tx: Tx,
-    serviceId: string,
-    idempotencyKey: string,
-  ): Promise<IngestResult | null> {
-    const earlier = await tx.alert.findUnique({
-      where: { serviceId_idempotencyKey: { serviceId, idempotencyKey } },
-      include: { incident: true },
-    });
-    if (!earlier) return null;
-
-    const ids = {
-      alert_id: earlier.id,
-      incident_id: earlier.incidentId,
-      incident_number: earlier.incident?.number ?? null,
-    };
-
-    // Nothing new was made this time, so it's a 200 either way.
-    return {
-      created: false,
-      body:
-        earlier.status === 'RESOLVED'
-          ? { ...ids, action: 'resolved' }
-          : { ...ids, deduplicated: earlier.deduplicated },
-    };
-  }
-
-  private async resolveFromAlert(
-    tx: Tx,
-    alertData: Prisma.AlertUncheckedCreateInput,
-    openIncident: { id: string; number: number } | null,
-  ): Promise<IngestResult> {
-    // The alert is stored even when there's nothing to close, so there's a
-    // record that it arrived.
-    const stored = await tx.alert.create({
-      data: { ...alertData, incidentId: openIncident?.id ?? null },
-    });
-
-    if (openIncident) {
-      await tx.incident.update({
-        where: { id: openIncident.id },
-        data: { status: 'RESOLVED', resolvedAt: new Date() },
-      });
-      await tx.incidentEvent.create({
+      const alert = await tx.alert.create({
         data: {
-          incidentId: openIncident.id,
-          type: 'RESOLVED',
-          actorType: 'INTEGRATION',
-          message: 'Resolved by an alert from the monitoring tool',
+          title: dto.title,
+          severity,
+          status,
+          dedupKey,
+          payload,
+          deduplicated: status === 'TRIGGERED' && !isNewIncident,
+          idempotencyKey: idempotencyKey ?? null,
+          serviceId,
+          apiKeyId: apiKey.id ?? null,
+          incidentId: incident ? incident.id : null,
         },
       });
-      // TODO (escalation): cancel this incident's pending escalation here.
+
+      return { alert, incident, isNewIncident };
+    });
+
+    if (apiKey.id) {
+      await this.apiKeysService.markKeyUsed(apiKey.id);
+    }
+
+    if (result.incident) {
+      if (result.isNewIncident) {
+        void this.announceNewIncident(result.incident.id);
+      } else if (result.alert.status === 'RESOLVED') {
+        void this.escalationService.cancel(result.incident.id);
+        void this.realtimeService.emitIncident(
+          'incident.resolved',
+          result.incident.id,
+          null,
+        );
+      } else {
+        void this.realtimeService.emitIncident(
+          'incident.updated',
+          result.incident.id,
+        );
+      }
+    }
+
+    const body = {
+      alert_id: result.alert.id,
+      incident_id: result.incident ? result.incident.id : null,
+      incident_number: result.incident ? result.incident.number : null,
+    };
+
+    if (result.alert.status === 'RESOLVED') {
+      return {
+        created: false,
+        body: { ...body, action: 'resolved' },
+      };
     }
 
     return {
-      created: false,
-      body: {
-        alert_id: stored.id,
-        incident_id: openIncident?.id ?? null,
-        incident_number: openIncident?.number ?? null,
-        action: 'resolved',
-      },
+      created: result.isNewIncident,
+      body: { ...body, deduplicated: result.alert.deduplicated },
     };
   }
 
-  private async attachToIncident(
-    tx: Tx,
-    alertData: Prisma.AlertUncheckedCreateInput,
-    openIncident: { id: string; number: number },
-  ): Promise<IngestResult> {
-    const stored = await tx.alert.create({
-      data: { ...alertData, incidentId: openIncident.id, deduplicated: true },
-    });
-    await tx.incident.update({
-      where: { id: openIncident.id },
-      data: { lastAlertAt: stored.receivedAt },
-    });
-
-    return {
-      created: false,
-      body: {
-        alert_id: stored.id,
-        incident_id: openIncident.id,
-        incident_number: openIncident.number,
-        deduplicated: true,
-      },
-    };
-  }
-
-  private async createIncident(
-    tx: Tx,
-    apiKey: CurrentApiKey,
-    alert: AlertInput,
-    alertData: Prisma.AlertUncheckedCreateInput,
-  ): Promise<IngestResult> {
-    // Adding 1 to the organization's counter and reading the result is one
-    // step in the database, so two incidents can never get the same number.
-    const organization = await tx.organization.update({
-      where: { id: apiKey.organizationId },
-      data: { incidentCounter: { increment: 1 } },
-    });
-
-    const incident = await tx.incident.create({
-      data: {
-        number: organization.incidentCounter,
-        title: alert.title,
-        description: alert.description,
-        severity: alert.severity,
-        dedupKey: alert.dedupKey,
-        organizationId: apiKey.organizationId,
-        serviceId: apiKey.serviceId,
-      },
-    });
-    const stored = await tx.alert.create({
-      data: { ...alertData, incidentId: incident.id },
-    });
-    await tx.incidentEvent.create({
-      data: {
-        incidentId: incident.id,
-        type: 'CREATED',
-        actorType: 'INTEGRATION',
-        message: 'Incident created from alert',
-      },
-    });
-
-    // TODO (escalation): start the service's escalation policy here, i.e.
-    // notify step 1 and schedule the move to step 2.
-
-    return {
-      created: true,
-      body: {
-        alert_id: stored.id,
-        incident_id: incident.id,
-        incident_number: incident.number,
-        deduplicated: false,
-      },
-    };
+  private async announceNewIncident(incidentId: string) {
+    await this.realtimeService.emitIncident('incident.created', incidentId);
+    await this.escalationService.start(incidentId);
   }
 }

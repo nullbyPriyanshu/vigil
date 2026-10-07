@@ -24,8 +24,6 @@ import { UpdateTeamDto } from './dto/updateTeam.dto';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-// Everyone in the organization can see teams; only owners and admins can
-// change them (the @Roles lines below).
 @Controller('teams')
 @UseGuards(AuthGuard, RolesGuard)
 export class TeamsController {

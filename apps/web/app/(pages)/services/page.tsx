@@ -8,6 +8,7 @@ import { PlusIcon, ServerIcon } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/service-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { LoadError } from "@/components/shared/load-error";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,7 +28,7 @@ export default function ServicesPage() {
   const { session } = useAuth();
   const [creating, setCreating] = useState(false);
 
-  const { data: services, isLoading } = useQuery({
+  const { data: services, isLoading, isError, refetch } = useQuery({
     queryKey: ["services"],
     queryFn: async () => (await getServicesApi()).data.data,
   });
@@ -49,7 +50,9 @@ export default function ServicesPage() {
         }
       />
 
-      {isLoading || !services ? (
+      {isError && !services ? (
+        <LoadError what="the services" onRetry={() => refetch()} />
+      ) : isLoading || !services ? (
         <Skeleton className="h-40 w-full rounded-xl" />
       ) : services.length === 0 ? (
         <EmptyState

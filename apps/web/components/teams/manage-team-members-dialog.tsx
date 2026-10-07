@@ -56,7 +56,13 @@ export function ManageTeamMembersDialog({
       onClose();
     },
     onError: (error) => {
-      toast.error(getApiErrorMessage(error, "Couldn't update the team."));
+      const message = getApiErrorMessage(error, "Couldn't update the team.");
+      // e.g. "User is on 1 schedule": they have to leave the rotation first.
+      toast.error(
+        /schedule/i.test(message)
+          ? `${message}. Take them off the rotation first.`
+          : message,
+      );
     },
     // Refresh either way: if one request failed part-way, the screen should
     // show what actually got saved.

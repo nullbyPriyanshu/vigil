@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UsersIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { LoadError } from "@/components/shared/load-error";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { CreateTeamDialog } from "@/components/teams/create-team-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +18,7 @@ const plural = (count: number, word: string) =>
 
 export default function TeamsPage() {
   const { session } = useAuth();
-  const { data: teams, isLoading } = useQuery({
+  const { data: teams, isLoading, isError, refetch } = useQuery({
     queryKey: ["teams"],
     queryFn: async () => (await getTeamsApi()).data.data,
   });
@@ -32,7 +33,9 @@ export default function TeamsPage() {
         action={canManage ? <CreateTeamDialog /> : undefined}
       />
 
-      {isLoading || !teams ? (
+      {isError && !teams ? (
+        <LoadError what="the teams" onRetry={() => refetch()} />
+      ) : isLoading || !teams ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-36 rounded-xl" />

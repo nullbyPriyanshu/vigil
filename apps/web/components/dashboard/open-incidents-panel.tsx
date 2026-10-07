@@ -6,28 +6,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { IncidentRow } from "@/components/dashboard/incident-row";
-import type { IncidentSummary } from "@/types/incident";
-
-// The "live" pill is decorative until day 46/47 wire up the WebSocket feed
-// that actually makes this list update itself; kept here now so the visual
-// design doesn't have to change when the real feed lands.
-function LiveBadge() {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-      <span className="relative flex size-1.5">
-        <span className="absolute inline-flex size-full rounded-full bg-emerald-400/70 motion-safe:animate-ping" />
-        <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
-      </span>
-      live
-    </span>
-  );
-}
+import { IncidentRow } from "@/components/incidents/incident-row";
+import { LiveBadge } from "@/components/incidents/live-badge";
+import type { IncidentRow as Incident } from "@/lib/api/incidents";
 
 export function OpenIncidentsPanel({
   incidents,
+  canRespond,
 }: {
-  incidents: IncidentSummary[];
+  incidents: Incident[];
+  canRespond: boolean;
 }) {
   return (
     <Card>
@@ -53,7 +41,11 @@ export function OpenIncidentsPanel({
       ) : (
         <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
           {incidents.map((incident) => (
-            <IncidentRow key={incident.id} incident={incident} />
+            <IncidentRow
+              key={incident.id}
+              incident={incident}
+              canRespond={canRespond}
+            />
           ))}
         </div>
       )}

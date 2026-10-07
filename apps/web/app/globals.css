@@ -217,3 +217,22 @@
     animation: none !important;
   }
 }
+/* A new incident's row glows red for a moment, then settles. */
+@keyframes row-flash {
+  0% {
+    background-color: color-mix(in oklch, var(--color-red-500) 22%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-row-flash {
+  animation: row-flash 2.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-row-flash {
+    animation: none;
+  }
+}

@@ -1,45 +1,93 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isAxiosError } from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+
 import { SeverityBadge } from "@/components/shared/severity-badge";
 import { StatusDot } from "@/components/shared/status-dot";
-import type { IncidentSummary } from "@/types/incident";
+import { Button } from "@/components/ui/button";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import {
+  acknowledgeIncidentApi,
+  resolveIncidentApi,
+  type IncidentRow as Incident,
+} from "@/lib/api/incidents";
+import { formatDateTime, timeAgo } from "@/lib/time";
+import { cn } from "@/lib/utils";
 
-// One row of an incident list — used on the dashboard's open-incidents
-// panel today, and meant to be the same row the real /incidents page
-// (day 26) renders later, so styling only has to be decided once.
-//
-// The whole row is a link to the incident (via a click/keyboard handler on
-// a plain div, not a real <a>, since it needs to contain real <button>s —
-// nesting interactive elements inside an anchor is invalid HTML). That's a
-// real tradeoff: middle-click / "open in new tab" won't work here the way
-// it would on a normal link. Acceptable for now; worth a real <Link> with a
-// stretched-overlay technique if that starts to matter.
-export function IncidentRow({ incident }: { incident: IncidentSummary }) {
+// Rows this new get a brief highlight, so an incident that just arrived
+// catches the eye.
+const NEW_FOR_MS = 15 * 1000;
+
+// One incident in a list: the dashboard's open incidents and the incidents
+// page both use it. The whole row opens the incident (a click handler on a
+// div rather than a real <a>, because it contains real buttons, and buttons
+// inside a link are invalid HTML).
+export function IncidentRow({
+  incident,
+  canRespond,
+}: {
+  incident: Incident;
+  canRespond: boolean;
+}) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  // When this row first appeared on screen.
+  const [shownAt] = useState(() => Date.now());
 
-  const meta =
-    incident.status === "RESOLVED"
-      ? `resolved by ${incident.resolvedBy} · ${incident.timeAgo}`
-      : incident.status === "ACKNOWLEDGED"
-        ? `ack'd by ${incident.acknowledgedBy} · ${incident.timeAgo}`
-        : incident.timeAgo;
+  const goToIncident = () => router.push(`/incidents/${incident.number}`);
 
-  const href = `/incidents/${incident.number}`;
-  const goToIncident = () => router.push(href);
+  const mutation = useMutation({
+    mutationFn: (action: "acknowledge" | "resolve") =>
+      action === "acknowledge"
+        ? acknowledgeIncidentApi(incident.id)
+        : resolveIncidentApi(incident.id),
+    onSuccess: (_, action) => {
+      toast.success(
+        `INC-${incident.number} ${action === "acknowledge" ? "acknowledged" : "resolved"}`,
+      );
+    },
+    onError: (error) => {
+      const message = getApiErrorMessage(error, "That didn't work.");
+      // 409: someone else got there first, which isn't really an error.
+      if (isAxiosError(error) && error.response?.status === 409) {
+        toast.info(message);
+      } else {
+        toast.error(message);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+  });
 
-  // Buttons stopPropagation so a click on them never reaches the row's own
-  // handler. There's no real acknowledge/resolve endpoint yet (day 30), so
-  // this stays UI-only — a toast confirms the click registered rather than
-  // the button doing nothing at all.
-  const handleAction = (action: "Acknowledge" | "Resolve") => (
-    e: React.MouseEvent,
-  ) => {
+  // Stops the click from also opening the incident.
+  const act = (action: "acknowledge" | "resolve") => (e: React.MouseEvent) => {
     e.stopPropagation();
-    toast.info(`${action} — wire this up once the API supports it.`);
+    mutation.mutate(action);
   };
+
+  let detail = `step ${Math.max(incident.currentStepPosition, 1)} of ${incident.totalSteps}`;
+  if (incident.status === "ACKNOWLEDGED") {
+    detail = incident.acknowledgedBy
+      ? `ack'd by ${incident.acknowledgedBy.name}`
+      : "acknowledged";
+  }
+  if (incident.status === "RESOLVED") {
+    detail = incident.resolvedBy
+      ? `resolved by ${incident.resolvedBy.name}`
+      : "resolved automatically";
+  }
+
+  const alerts = `${incident.alertCount} ${incident.alertCount === 1 ? "alert" : "alerts"}`;
+  const open = incident.status !== "RESOLVED";
+  const isNew =
+    incident.status === "TRIGGERED" &&
+    shownAt - new Date(incident.createdAt).getTime() < NEW_FOR_MS;
 
   return (
     <div
@@ -52,40 +100,62 @@ export function IncidentRow({ incident }: { incident: IncidentSummary }) {
           goToIncident();
         }
       }}
-      className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 px-(--card-spacing) py-3 outline-none transition-colors hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:-outline-offset-2 dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.02]"
+      className={cn(
+        "flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 px-(--card-spacing) py-3 outline-none transition-colors hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:-outline-offset-2 dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.02]",
+        isNew && "animate-row-flash",
+      )}
     >
       <StatusDot status={incident.status} />
-      <span className="font-mono text-xs text-zinc-500">
+      <span className="w-16 shrink-0 font-mono text-xs text-zinc-500">
         INC-{incident.number}
       </span>
-      {/* Fixed-width column, not the badge's own natural size — "CRITICAL"
-          and "HIGH" are different widths, and without this the title after
-          it would start at a different x position on every row. */}
+      {/* Fixed width so every title starts at the same place. */}
       <div className="w-20 shrink-0">
         <SeverityBadge severity={incident.severity} />
       </div>
 
       <div className="min-w-48 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        <p
+          className={cn(
+            "truncate text-sm font-medium",
+            open
+              ? "text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400",
+          )}
+        >
           {incident.title}
         </p>
         <p className="truncate text-xs text-zinc-500">
-          {incident.service ? `${incident.service} · ` : ""}
-          {meta}
+          {incident.service.name} · {detail} · {alerts}
         </p>
       </div>
 
-      {incident.status !== "RESOLVED" && (
+      {/* Relative at a glance; the exact time on hover. */}
+      <time
+        dateTime={incident.createdAt}
+        title={formatDateTime(incident.createdAt)}
+        className="shrink-0 text-xs text-zinc-500 tabular-nums"
+      >
+        {timeAgo(incident.createdAt)}
+      </time>
+
+      {canRespond && open && (
         <div className="flex shrink-0 gap-2">
           {incident.status === "TRIGGERED" && (
-            <Button size="sm" variant="brand" onClick={handleAction("Acknowledge")}>
+            <Button
+              size="sm"
+              variant="brand"
+              disabled={mutation.isPending}
+              onClick={act("acknowledge")}
+            >
               Acknowledge
             </Button>
           )}
           <Button
             size="sm"
             variant={incident.status === "ACKNOWLEDGED" ? "brand" : "outline"}
-            onClick={handleAction("Resolve")}
+            disabled={mutation.isPending}
+            onClick={act("resolve")}
           >
             Resolve
           </Button>

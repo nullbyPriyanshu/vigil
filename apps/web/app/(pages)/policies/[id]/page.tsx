@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeftIcon, PencilIcon, UserIcon, UsersIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  CalendarClockIcon,
+  PencilIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import { PolicyFormDialog } from "@/components/policies/policy-form-dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
@@ -32,7 +38,7 @@ export default function PolicyPage({
   const { session } = useAuth();
   const [dialog, setDialog] = useState<OpenDialog>(null);
 
-  const { data: policy, error, isLoading } = useQuery({
+  const { data: policy, error, isLoading, refetch } = useQuery({
     queryKey: ["policy", id],
     queryFn: async () => (await getPolicyApi(id)).data,
     retry: false,
@@ -65,6 +71,16 @@ export default function PolicyPage({
               ? "It may have been deleted, or the link is wrong."
               : "Please try again in a moment."}
           </p>
+          {!missing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              Try again
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -114,12 +130,15 @@ export default function PolicyPage({
                     <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                       {step.targetType === "TEAM" ? (
                         <UsersIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                      ) : step.targetType === "SCHEDULE" ? (
+                        <CalendarClockIcon className="size-3.5 shrink-0 text-muted-foreground" />
                       ) : (
                         <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <span className="truncate">
                         Notify {step.target.name}
                         {step.targetType === "TEAM" && " (everyone on the team)"}
+                        {step.targetType === "SCHEDULE" && " (whoever is on call)"}
                       </span>
                     </p>
                     <p className="mt-0.5 text-sm text-muted-foreground">

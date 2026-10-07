@@ -8,7 +8,5 @@ import { EscalationPoliciesService } from './escalation-policies.service';
   imports: [AuthModule, MembersModule],
   controllers: [EscalationPoliciesController],
   providers: [EscalationPoliciesService],
-  // Incidents show their service's policy, steps and all.
-  exports: [EscalationPoliciesService],
 })
 export class EscalationPoliciesModule {}

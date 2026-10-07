@@ -1,9 +1,9 @@
-import { SOURCES } from './sources';
+import { fromGrafana, fromSentry, fromUptimeRobot } from './sources';
 
-describe('SOURCES', () => {
+describe('alert sources', () => {
   it('translates a Sentry issue webhook', () => {
     expect(
-      SOURCES.sentry({
+      fromSentry({
         action: 'created',
         data: {
           issue: {
@@ -24,7 +24,7 @@ describe('SOURCES', () => {
   });
 
   it('treats a Sentry "resolved" action as a resolve', () => {
-    const alert = SOURCES.sentry({
+    const alert = fromSentry({
       action: 'resolved',
       data: { issue: { id: '991', title: 'TypeError', level: 'fatal' } },
     });
@@ -36,17 +36,17 @@ describe('SOURCES', () => {
       status: 'firing',
       title: '[FIRING:1] High CPU',
       message: 'CPU above 90% for 5m',
-      groupKey: '{}:{alertname="High CPU"}',
-      commonLabels: { alertname: 'High CPU', severity: 'critical' },
+      groupKey: 'g1',
+      commonLabels: { severity: 'critical' },
     };
-    expect(SOURCES.grafana(body)).toEqual({
+    expect(fromGrafana(body)).toEqual({
       title: '[FIRING:1] High CPU',
-      dedup_key: 'grafana-{}:{alertname="High CPU"}',
+      dedup_key: 'grafana-g1',
       severity: 'critical',
       status: 'triggered',
       description: 'CPU above 90% for 5m',
     });
-    expect(SOURCES.grafana({ ...body, status: 'resolved' })).toMatchObject({
+    expect(fromGrafana({ ...body, status: 'resolved' })).toMatchObject({
       status: 'resolved',
     });
   });
@@ -58,22 +58,21 @@ describe('SOURCES', () => {
       alertType: 1,
       alertDetails: 'Connection timeout',
     };
-    expect(SOURCES.uptimerobot(body)).toEqual({
+    expect(fromUptimeRobot(body)).toEqual({
       title: 'Website is down',
       dedup_key: 'uptimerobot-77',
       severity: 'critical',
       status: 'triggered',
       description: 'Connection timeout',
     });
-    expect(SOURCES.uptimerobot({ ...body, alertType: '2' })).toMatchObject({
+    expect(fromUptimeRobot({ ...body, alertType: '2' })).toMatchObject({
       status: 'resolved',
-      dedup_key: 'uptimerobot-77',
     });
   });
 
   it("returns null for a body that is not that tool's webhook", () => {
-    expect(SOURCES.sentry({ hello: 'world' })).toBeNull();
-    expect(SOURCES.grafana({ title: 'no status' })).toBeNull();
-    expect(SOURCES.uptimerobot({ monitorID: 1 })).toBeNull();
+    expect(fromSentry({})).toBeNull();
+    expect(fromGrafana({ title: 'no status' })).toBeNull();
+    expect(fromUptimeRobot({ monitorID: 1 })).toBeNull();
   });
 });

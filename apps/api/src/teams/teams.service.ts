@@ -7,18 +7,15 @@ import {
 import { slugify } from 'src/auth/utils/slugify';
 import { MembersService } from 'src/members/members.service';
 import { PrismaService } from 'src/prisma.service';
+import { SchedulesService } from 'src/schedules/schedules.service';
 import { AddTeamMemberDto } from './dto/addTeamMember.dto';
 import { CreateTeamDto } from './dto/createTeam.dto';
 import { UpdateTeamDto } from './dto/updateTeam.dto';
 
-// How many people the teams list shows per team (the row of initials).
-const MEMBER_PREVIEW_SIZE = 5;
-
-// "Rahul Verma" -> "RV", "Priyanshu" -> "P".
-function initialsOf(name: string) {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+function getInitials(name: string) {
+  const words = name.trim().split(/\s+/);
+  const first = words[0][0] ?? '';
+  const last = words.length > 1 ? words[words.length - 1][0] : '';
   return (first + last).toUpperCase();
 }
 
@@ -27,96 +24,103 @@ export class TeamsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly membersService: MembersService,
+    private readonly schedulesService: SchedulesService,
   ) {}
-
-  // ---------- Reading (any role) ----------
 
   async listTeams(organizationId: string) {
     const teams = await this.prisma.team.findMany({
       where: { organizationId },
-      include: {
-        members: { include: { user: true } },
-        _count: { select: { services: true } },
-      },
+      include: { members: { include: { user: true } }, services: true },
       orderBy: { name: 'asc' },
     });
 
-    return {
-      data: teams.map((team) => {
-        const people = team.members
-          .map((member) => member.user)
-          .sort((a, b) => a.name.localeCompare(b.name));
+    const data = teams.map((team) => {
+      const users = team.members.map((member) => member.user);
+      users.sort((a, b) => a.name.localeCompare(b.name));
 
-        return {
-          id: team.id,
-          name: team.name,
-          slug: team.slug,
-          memberCount: people.length,
-          serviceCount: team._count.services,
-          members: people.slice(0, MEMBER_PREVIEW_SIZE).map((user) => ({
-            userId: user.id,
-            name: user.name,
-            initials: initialsOf(user.name),
-          })),
-        };
-      }),
-    };
+      return {
+        id: team.id,
+        name: team.name,
+        slug: team.slug,
+        memberCount: users.length,
+        serviceCount: team.services.length,
+        members: users.slice(0, 5).map((user) => ({
+          userId: user.id,
+          name: user.name,
+          initials: getInitials(user.name),
+        })),
+      };
+    });
+
+    return { data };
   }
 
   async getTeam(organizationId: string, teamId: string) {
-    const team = await this.findTeamOrThrow(organizationId, teamId);
+    const team = await this.prisma.team.findFirst({
+      where: { id: teamId, organizationId },
+      include: {
+        members: true,
+        services: { orderBy: { name: 'asc' } },
+        schedules: { orderBy: { name: 'asc' } },
+      },
+    });
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
 
-    // Each person's organization role, to show next to their name.
     const memberships = await this.prisma.membership.findMany({
       where: {
         organizationId,
-        user: { teamMemberships: { some: { teamId } } },
+        userId: { in: team.members.map((member) => member.userId) },
       },
       include: { user: true },
     });
 
-    const members = memberships
-      .map((membership) => ({
-        userId: membership.userId,
-        name: membership.user.name,
-        email: membership.user.email,
-        role: membership.role,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const members = memberships.map((membership) => ({
+      userId: membership.userId,
+      name: membership.user.name,
+      email: membership.user.email,
+      role: membership.role,
+    }));
+    members.sort((a, b) => a.name.localeCompare(b.name));
 
     return {
       id: team.id,
       name: team.name,
       slug: team.slug,
       members,
-      services: await this.findTeamServices(team.id),
-      // TODO (schedules): fill this in once schedules exist.
-      schedules: [] as { id: string; name: string }[],
+      services: team.services.map((service) => ({
+        id: service.id,
+        name: service.name,
+      })),
+      schedules: team.schedules.map((schedule) => ({
+        id: schedule.id,
+        name: schedule.name,
+      })),
     };
   }
 
-  // ---------- Changing (owners and admins) ----------
+  async createTeam(userId: string, organizationId: string, dto: CreateTeamDto) {
+    await this.membersService.assertCanManageMembers(userId, organizationId);
 
-  async createTeam(
-    currentUserId: string,
-    organizationId: string,
-    dto: CreateTeamDto,
-  ) {
-    await this.membersService.assertCanManageMembers(
-      currentUserId,
-      organizationId,
-    );
-
-    const slug = await this.makeFreeSlug(organizationId, dto.name);
+    const slug = await this.getFreeSlug(organizationId, dto.name);
     const memberIds = dto.memberIds ?? [];
-    await this.assertAllInOrganization(organizationId, memberIds);
+
+    const membersFound = await this.prisma.membership.count({
+      where: { organizationId, userId: { in: memberIds } },
+    });
+    if (membersFound !== memberIds.length) {
+      throw new BadRequestException(
+        'Every team member must already be in your organization',
+      );
+    }
 
     const team = await this.prisma.team.create({
       data: {
         name: dto.name,
         slug,
         organizationId,
-        members: { create: memberIds.map((userId) => ({ userId })) },
+        members: { create: memberIds.map((id) => ({ userId: id })) },
       },
     });
 
@@ -124,20 +128,15 @@ export class TeamsService {
   }
 
   async updateTeam(
-    currentUserId: string,
+    userId: string,
     organizationId: string,
     teamId: string,
     dto: UpdateTeamDto,
   ) {
-    await this.membersService.assertCanManageMembers(
-      currentUserId,
-      organizationId,
-    );
+    await this.membersService.assertCanManageMembers(userId, organizationId);
     const team = await this.findTeamOrThrow(organizationId, teamId);
 
-    // The slug follows the name. `team.id` is passed so that renaming a
-    // team to something with the same slug doesn't clash with itself.
-    const slug = await this.makeFreeSlug(organizationId, dto.name, team.id);
+    const slug = await this.getFreeSlug(organizationId, dto.name, team.id);
 
     await this.prisma.team.update({
       where: { id: team.id },
@@ -147,43 +146,36 @@ export class TeamsService {
     return this.getTeam(organizationId, team.id);
   }
 
-  async deleteTeam(
-    currentUserId: string,
-    organizationId: string,
-    teamId: string,
-  ) {
-    await this.membersService.assertCanManageMembers(
-      currentUserId,
-      organizationId,
-    );
-    const team = await this.findTeamOrThrow(organizationId, teamId);
+  async deleteTeam(userId: string, organizationId: string, teamId: string) {
+    await this.membersService.assertCanManageMembers(userId, organizationId);
+    const team = await this.getTeam(organizationId, teamId);
 
-    // A service must always have a team, so a team that still owns some
-    // can't be deleted. The response lists the services to move first.
-    const services = await this.findTeamServices(team.id);
-    if (services.length > 0) {
+    if (team.services.length > 0) {
+      const word = team.services.length === 1 ? 'service' : 'services';
       throw new ConflictException({
-        message: `Team owns ${services.length} ${services.length === 1 ? 'service' : 'services'}`,
-        services,
+        message: `Team owns ${team.services.length} ${word}`,
+        services: team.services,
       });
     }
 
-    // TODO (schedules): the same check for schedules, once they exist.
+    if (team.schedules.length > 0) {
+      const word = team.schedules.length === 1 ? 'schedule' : 'schedules';
+      throw new ConflictException({
+        message: `Team owns ${team.schedules.length} ${word}`,
+        schedules: team.schedules,
+      });
+    }
 
-    // The team's member rows go with it (onDelete: Cascade in the schema).
     await this.prisma.team.delete({ where: { id: team.id } });
   }
 
   async addTeamMember(
-    currentUserId: string,
+    userId: string,
     organizationId: string,
     teamId: string,
     dto: AddTeamMemberDto,
   ) {
-    await this.membersService.assertCanManageMembers(
-      currentUserId,
-      organizationId,
-    );
+    await this.membersService.assertCanManageMembers(userId, organizationId);
     const team = await this.findTeamOrThrow(organizationId, teamId);
 
     const membership = await this.prisma.membership.findUnique({
@@ -198,13 +190,14 @@ export class TeamsService {
       );
     }
 
-    // upsert = "add them unless they're already there", so adding someone
-    // twice quietly does nothing instead of failing.
-    await this.prisma.teamMember.upsert({
+    const alreadyOnTeam = await this.prisma.teamMember.findUnique({
       where: { teamId_userId: { teamId: team.id, userId: dto.userId } },
-      create: { teamId: team.id, userId: dto.userId },
-      update: {},
     });
+    if (!alreadyOnTeam) {
+      await this.prisma.teamMember.create({
+        data: { teamId: team.id, userId: dto.userId },
+      });
+    }
 
     return {
       teamId: team.id,
@@ -213,60 +206,54 @@ export class TeamsService {
     };
   }
 
-  // `force` will matter once schedules exist: removing someone who is on
-  // one of the team's schedules needs the caller to confirm first.
   async removeTeamMember(
-    currentUserId: string,
+    userId: string,
     organizationId: string,
     teamId: string,
-    userId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    memberId: string,
     force: boolean,
   ) {
-    await this.membersService.assertCanManageMembers(
-      currentUserId,
-      organizationId,
-    );
+    await this.membersService.assertCanManageMembers(userId, organizationId);
     const team = await this.findTeamOrThrow(organizationId, teamId);
 
-    // TODO (schedules): if this user is on one of the team's schedules and
-    // `force` is false, refuse with a 409 that lists them, e.g.
-    //   throw new ConflictException({ message: 'User is on 1 schedule', schedules })
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        teamId: team.id,
+        participants: { some: { userId: memberId } },
+      },
+    });
 
-    // deleteMany rather than delete: removing someone who isn't on the
-    // team is simply nothing to do, not an error.
+    if (schedules.length > 0 && !force) {
+      const word = schedules.length === 1 ? 'schedule' : 'schedules';
+      throw new ConflictException({
+        message: `User is on ${schedules.length} ${word}`,
+        schedules: schedules.map((schedule) => ({
+          id: schedule.id,
+          name: schedule.name,
+        })),
+      });
+    }
+
+    for (const schedule of schedules) {
+      await this.schedulesService.removeFromRotation(schedule.id, memberId);
+    }
+
     await this.prisma.teamMember.deleteMany({
-      where: { teamId: team.id, userId },
+      where: { teamId: team.id, userId: memberId },
     });
   }
 
-  // ---------- Helpers ----------
-
-  // Looking the team up together with organizationId is what stops one
-  // organization from reading or changing another's teams.
   private async findTeamOrThrow(organizationId: string, teamId: string) {
     const team = await this.prisma.team.findFirst({
       where: { id: teamId, organizationId },
     });
-
     if (!team) {
       throw new NotFoundException('Team not found');
     }
-
     return team;
   }
 
-  private findTeamServices(teamId: string) {
-    return this.prisma.service.findMany({
-      where: { teamId },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  // Turns a name into a slug and makes sure no other team in the
-  // organization already has it.
-  private async makeFreeSlug(
+  private async getFreeSlug(
     organizationId: string,
     name: string,
     ignoreTeamId?: string,
@@ -278,31 +265,15 @@ export class TeamsService {
       );
     }
 
-    const taken = await this.prisma.team.findUnique({
+    const existing = await this.prisma.team.findUnique({
       where: { organizationId_slug: { organizationId, slug } },
     });
-    if (taken && taken.id !== ignoreTeamId) {
+    if (existing && existing.id !== ignoreTeamId) {
       throw new ConflictException(
-        `A team named "${taken.name}" already exists`,
+        `A team named "${existing.name}" already exists`,
       );
     }
 
     return slug;
-  }
-
-  private async assertAllInOrganization(
-    organizationId: string,
-    userIds: string[],
-  ) {
-    if (userIds.length === 0) return;
-
-    const found = await this.prisma.membership.count({
-      where: { organizationId, userId: { in: userIds } },
-    });
-    if (found !== userIds.length) {
-      throw new BadRequestException(
-        'Every team member must already be in your organization',
-      );
-    }
   }
 }

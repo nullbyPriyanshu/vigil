@@ -18,7 +18,6 @@ const trim = ({ value }: { value: unknown }) =>
 const trimToNull = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() || null : value;
 
-// Any subset of the fields used to create a service.
 export class UpdateServiceDto {
   @IsOptional()
   @Transform(trim)
@@ -27,7 +26,6 @@ export class UpdateServiceDto {
   @MaxLength(80, { message: 'Service name must be at most 80 characters' })
   name?: string;
 
-  // null clears the description.
   @ValidateIf((dto: UpdateServiceDto) => dto.description != null)
   @Transform(trimToNull)
   @IsString()
@@ -44,7 +42,6 @@ export class UpdateServiceDto {
   })
   escalationPolicyId?: string;
 
-  // null turns auto-resolve off.
   @ValidateIf((dto: UpdateServiceDto) => dto.autoResolveMinutes != null)
   @IsInt({ message: 'autoResolveMinutes must be a whole number of minutes' })
   @Min(1, { message: 'autoResolveMinutes must be at least 1' })

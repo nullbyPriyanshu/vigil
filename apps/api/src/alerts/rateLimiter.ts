@@ -1,36 +1,25 @@
 import { Injectable } from '@nestjs/common';
+import { RedisService } from 'src/redis/redis.service';
 
-export const RATE_LIMIT = 100;
-export const RATE_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_MINUTE = 100;
 
-// Lets each API key send RATE_LIMIT alerts a minute. The counts live in
-// this process's memory, which is fine for one server. With several
-// servers they'd each count separately, and this should move to Redis.
 @Injectable()
 export class RateLimiter {
-  // key id -> when its current minute started, and how many requests so far.
-  private readonly windows = new Map<
-    string,
-    { startedAt: number; count: number }
-  >();
+  constructor(private readonly redis: RedisService) {}
 
-  // Counts one request. Returns 0 when it's allowed, otherwise how many
-  // seconds the caller should wait.
-  check(keyId: string, now = Date.now()): number {
-    const window = this.windows.get(keyId);
+  async getSecondsToWait(keyId: string) {
+    const redisKey = `rate-limit:${keyId}`;
 
-    // First request, or the last minute is over: start a new one.
-    if (!window || now - window.startedAt >= RATE_WINDOW_MS) {
-      this.windows.set(keyId, { startedAt: now, count: 1 });
+    const count = await this.redis.incr(redisKey);
+    if (count === 1) {
+      await this.redis.expire(redisKey, 60);
+    }
+
+    if (count <= MAX_REQUESTS_PER_MINUTE) {
       return 0;
     }
 
-    if (window.count < RATE_LIMIT) {
-      window.count += 1;
-      return 0;
-    }
-
-    const msLeft = window.startedAt + RATE_WINDOW_MS - now;
-    return Math.max(1, Math.ceil(msLeft / 1000));
+    const secondsLeft = await this.redis.ttl(redisKey);
+    return secondsLeft > 0 ? secondsLeft : 1;
   }
 }

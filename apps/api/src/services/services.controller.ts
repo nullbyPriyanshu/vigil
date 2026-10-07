@@ -18,12 +18,11 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/createService.dto';
+import { TestAlertDto } from './dto/testAlert.dto';
 import { UpdateServiceDto } from './dto/updateService.dto';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-// Everyone in the organization can see services; only owners and admins
-// can change them.
 @Controller('services')
 @UseGuards(AuthGuard, RolesGuard)
 export class ServicesController {
@@ -78,6 +77,21 @@ export class ServicesController {
       req.user.userId,
       req.user.organizationId,
       id,
+    );
+  }
+
+  @Post(':id/test-alert')
+  @Roles('OWNER', 'ADMIN', 'RESPONDER')
+  sendTestAlert(
+    @Req() req: AuthedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TestAlertDto,
+  ) {
+    return this.servicesService.sendTestAlert(
+      req.user.userId,
+      req.user.organizationId,
+      id,
+      dto.severity ?? 'HIGH',
     );
   }
 }

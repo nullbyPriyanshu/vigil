@@ -19,7 +19,6 @@ export class CreateTeamDto {
   @MaxLength(60, { message: 'Team name must be at most 60 characters' })
   name!: string;
 
-  // People to put on the team straight away. Optional.
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(200)

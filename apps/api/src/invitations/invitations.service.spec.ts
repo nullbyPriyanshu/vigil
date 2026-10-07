@@ -27,12 +27,11 @@ const ORG = { id: 'o1', name: 'Acme Corp', slug: 'acme-corp' };
 
 function createPrismaMock() {
   const models = {
-    organization: { findUnique: jest.fn().mockResolvedValue(ORG) },
+    organization: { findUniqueOrThrow: jest.fn().mockResolvedValue(ORG) },
     user: { findUnique: jest.fn(), create: jest.fn() },
     membership: {
       findFirst: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
-      upsert: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
     },
     invitation: {
@@ -151,7 +150,6 @@ describe('InvitationsService', () => {
       prisma.membership.findFirst.mockResolvedValue(null);
       prisma.invitation.create.mockResolvedValue(invitation());
       mail.sendInvitationEmail.mockRejectedValue(new Error('down'));
-      jest.spyOn(service['logger'], 'error').mockImplementation(() => {});
 
       await expect(
         service.createInvitation('u1', 'o1', dto),
@@ -253,7 +251,7 @@ describe('InvitationsService', () => {
   describe('acceptInvitation', () => {
     beforeEach(() => {
       prisma.invitation.findUnique.mockResolvedValue(invitation());
-      prisma.membership.findUniqueOrThrow.mockResolvedValue({
+      prisma.membership.create.mockResolvedValue({
         organizationId: 'o1',
         role: 'RESPONDER',
       });
@@ -339,7 +337,7 @@ describe('InvitationsService', () => {
             { userId: 'someone-else', organizationId: 'o9', role: 'OWNER' },
           ),
         ).rejects.toBeInstanceOf(ForbiddenException);
-        expect(prisma.membership.upsert).not.toHaveBeenCalled();
+        expect(prisma.membership.create).not.toHaveBeenCalled();
       });
 
       it('adds the membership when logged in as that account', async () => {
@@ -350,7 +348,9 @@ describe('InvitationsService', () => {
         );
 
         expect(prisma.user.create).not.toHaveBeenCalled();
-        expect(prisma.membership.upsert).toHaveBeenCalledTimes(1);
+        expect(prisma.membership.create).toHaveBeenCalledWith({
+          data: { userId: 'amit', organizationId: 'o1', role: 'RESPONDER' },
+        });
         expect(auth.issueTokens).toHaveBeenCalledWith('amit', {
           organizationId: 'o1',
           role: 'RESPONDER',
@@ -364,7 +364,23 @@ describe('InvitationsService', () => {
           undefined,
         );
 
-        expect(prisma.membership.upsert).toHaveBeenCalledTimes(1);
+        expect(prisma.membership.create).toHaveBeenCalledTimes(1);
+      });
+
+      it('keeps the role of someone who is already a member', async () => {
+        prisma.membership.findUnique.mockResolvedValue({
+          organizationId: 'o1',
+          role: 'ADMIN',
+        });
+
+        const result = await service.acceptInvitation(
+          't',
+          {},
+          { userId: 'amit', organizationId: 'o1', role: 'ADMIN' },
+        );
+
+        expect(prisma.membership.create).not.toHaveBeenCalled();
+        expect(result.role).toBe('ADMIN');
       });
 
       it('rejects a wrong password', async () => {
@@ -375,7 +391,7 @@ describe('InvitationsService', () => {
             undefined,
           ),
         ).rejects.toBeInstanceOf(UnauthorizedException);
-        expect(prisma.membership.upsert).not.toHaveBeenCalled();
+        expect(prisma.membership.create).not.toHaveBeenCalled();
       });
     });
   });

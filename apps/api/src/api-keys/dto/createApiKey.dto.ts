@@ -2,7 +2,6 @@ import { Transform } from 'class-transformer';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateApiKeyDto {
-  // A label so people remember where the key is used, e.g. "Sentry production".
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )

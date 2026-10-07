@@ -8,5 +8,5 @@ export class CreateNoteDto {
   @IsString({ message: 'Message is required' })
   @IsNotEmpty({ message: "Message can't be empty" })
   @MaxLength(2000, { message: 'Message must be at most 2000 characters' })
-  message: string;
+  message!: string;
 }

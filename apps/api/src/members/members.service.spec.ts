@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ function createPrismaMock() {
     },
     refreshToken: { deleteMany: jest.fn() },
     teamMember: { deleteMany: jest.fn() },
+    schedule: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   };
 }
@@ -191,6 +193,24 @@ describe('MembersService', () => {
       expect(prisma.teamMember.deleteMany).toHaveBeenCalledWith({
         where: { userId: 'them', team: { organizationId: 'o1' } },
       });
+    });
+
+    it('refuses with 409 while they are still on a schedule', async () => {
+      setMembers({ me: 'ADMIN', them: 'RESPONDER' });
+      prisma.schedule.findMany.mockResolvedValue([
+        { id: 'sc1', name: 'Platform Weekly' },
+      ]);
+
+      const error = await service
+        .removeMember('me', 'o1', 'them')
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(ConflictException);
+      expect((error as ConflictException).getResponse()).toEqual({
+        message: 'User is on 1 schedule. Take them off the rotation first',
+        schedules: [{ id: 'sc1', name: 'Platform Weekly' }],
+      });
+      expect(prisma.membership.delete).not.toHaveBeenCalled();
     });
   });
 });

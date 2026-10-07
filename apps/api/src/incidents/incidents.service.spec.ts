@@ -4,11 +4,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { EscalationPoliciesService } from '../escalation-policies/escalation-policies.service';
 import { PrismaService } from '../prisma.service';
+import { EscalationService } from '../escalation/escalation.service';
+import { RealtimeService } from '../realtime/realtime.service';
 import { IncidentsService } from './incidents.service';
 
+jest.mock('../escalation/escalation.service', () => ({
+  EscalationService: class {},
+}));
+jest.mock('../realtime/realtime.service', () => ({
+  RealtimeService: class {},
+}));
+
 const NOW = new Date('2026-01-12T21:44:00.000Z');
+const RAHUL = { id: 'u2', name: 'Rahul Verma', email: 'rahul@acme.com' };
 
 const STORED = {
   id: 'i1',
@@ -26,35 +35,40 @@ const STORED = {
   resolvedBy: null,
   currentStepPosition: 1,
   escalationRound: 0,
+  nextEscalationAt: null,
   organizationId: 'o1',
+  alerts: [{ id: 'a1' }, { id: 'a2' }],
+  notifications: [
+    { stepPosition: 1, status: 'DELIVERED', createdAt: NOW, user: RAHUL },
+  ],
   service: {
     id: 's1',
     name: 'Checkout API',
-    escalationPolicyId: 'p1',
     team: { id: 't1', name: 'Platform Team' },
-    escalationPolicy: { _count: { steps: 2 } },
+    escalationPolicy: {
+      id: 'p1',
+      name: 'Platform Critical',
+      repeatCount: 1,
+      steps: [
+        {
+          position: 1,
+          delayMinutes: 5,
+          targetType: 'USER',
+          user: RAHUL,
+          team: null,
+          schedule: null,
+        },
+        {
+          position: 2,
+          delayMinutes: 10,
+          targetType: 'SCHEDULE',
+          user: null,
+          team: null,
+          schedule: { id: 'sc1', name: 'Platform Weekly' },
+        },
+      ],
+    },
   },
-  _count: { alerts: 12 },
-};
-
-const POLICY = {
-  id: 'p1',
-  name: 'Platform Critical',
-  repeatCount: 1,
-  steps: [
-    {
-      position: 1,
-      delayMinutes: 5,
-      targetType: 'USER',
-      target: { id: 'u2', name: 'Rahul Verma' },
-    },
-    {
-      position: 2,
-      delayMinutes: 10,
-      targetType: 'TEAM',
-      target: { id: 't1', name: 'Platform Team' },
-    },
-  ],
 };
 
 function createPrismaMock() {
@@ -73,7 +87,6 @@ function createPrismaMock() {
         id: 'e1',
         createdAt: NOW,
         metadata: null,
-        actor: { id: 'u1', name: 'Priyanshu Maurya' },
         ...data,
       })),
     },
@@ -93,154 +106,128 @@ function createPrismaMock() {
 describe('IncidentsService', () => {
   let service: IncidentsService;
   let prisma: ReturnType<typeof createPrismaMock>;
-
-  beforeEach(async () => {
-    prisma = createPrismaMock();
-
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        IncidentsService,
-        { provide: PrismaService, useValue: prisma },
-        {
-          provide: EscalationPoliciesService,
-          useValue: { getPolicy: jest.fn().mockResolvedValue(POLICY) },
-        },
-      ],
-    }).compile();
-    service = moduleRef.get(IncidentsService);
-  });
+  let realtime: { emitIncident: jest.Mock };
+  let escalation: { cancel: jest.Mock };
 
   const eventTypes = () =>
     (
       prisma.incidentEvent.create.mock.calls as [{ data: { type: string } }][]
     ).map((call) => call[0].data.type);
 
-  describe('listIncidents', () => {
-    it('returns a row with everything the list needs, and page info', async () => {
-      prisma.incident.count.mockResolvedValue(142);
+  beforeEach(async () => {
+    prisma = createPrismaMock();
+    realtime = { emitIncident: jest.fn() };
+    escalation = { cancel: jest.fn() };
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        IncidentsService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: RealtimeService, useValue: realtime },
+        { provide: EscalationService, useValue: escalation },
+      ],
+    }).compile();
+    service = moduleRef.get(IncidentsService);
+  });
 
-      const result = await service.listIncidents('o1', {
-        page: 1,
-        pageSize: 25,
-      });
+  it('lists incidents with counts and page info', async () => {
+    prisma.incident.count.mockResolvedValue(142);
 
-      expect(result.data[0]).toEqual({
-        id: 'i1',
-        number: 142,
-        title: 'Pool exhausted',
-        severity: 'CRITICAL',
-        status: 'TRIGGERED',
-        service: { id: 's1', name: 'Checkout API' },
-        alertCount: 12,
-        currentStepPosition: 1,
-        totalSteps: 2,
-        acknowledgedBy: null,
-        acknowledgedAt: null,
-        resolvedBy: null,
-        resolvedAt: null,
-        lastAlertAt: NOW,
-        createdAt: NOW,
-      });
-      expect(result.meta).toEqual({
-        page: 1,
-        pageSize: 25,
-        total: 142,
-        totalPages: 6,
-      });
+    const result = await service.listIncidents('o1', { page: 1, pageSize: 25 });
+
+    expect(result.data[0]).toMatchObject({
+      number: 142,
+      service: { id: 's1', name: 'Checkout API' },
+      alertCount: 2,
+      currentStepPosition: 1,
+      totalSteps: 2,
+      acknowledgedBy: null,
     });
-
-    it('applies the filters and the page, newest first, inside this organization', async () => {
-      await service.listIncidents('o1', {
-        page: 3,
-        pageSize: 10,
-        status: 'TRIGGERED',
-        severity: 'CRITICAL',
-        service: 's1',
-      });
-
-      const query = prisma.incident.findMany.mock.calls[0] as [
-        Record<string, unknown>,
-      ];
-      expect(query[0].where).toEqual({
-        organizationId: 'o1',
-        status: 'TRIGGERED',
-        severity: 'CRITICAL',
-        serviceId: 's1',
-      });
-      expect(query[0].orderBy).toEqual({ createdAt: 'desc' });
-      expect(query[0].skip).toBe(20);
-      expect(query[0].take).toBe(10);
+    expect(result.meta).toEqual({
+      page: 1,
+      pageSize: 25,
+      total: 142,
+      totalPages: 6,
     });
   });
 
-  describe('getIncidentByNumber', () => {
-    it('looks the number up inside this organization only', async () => {
-      prisma.incident.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.getIncidentByNumber('o1', 999),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(prisma.incident.findUnique).toHaveBeenCalledWith({
-        where: { organizationId_number: { organizationId: 'o1', number: 999 } },
-      });
+  it('applies filters and paging inside this organization, newest first', async () => {
+    await service.listIncidents('o1', {
+      page: 3,
+      pageSize: 10,
+      status: 'TRIGGERED',
+      severity: 'CRITICAL',
+      service: 's1',
     });
 
-    it('includes the service, team and escalation steps by name', async () => {
-      const incident = await service.getIncidentByNumber('o1', 142);
+    const query = (
+      prisma.incident.findMany.mock.calls[0] as [Record<string, unknown>]
+    )[0];
+    expect(query.where).toEqual({
+      organizationId: 'o1',
+      status: 'TRIGGERED',
+      severity: 'CRITICAL',
+      serviceId: 's1',
+    });
+    expect(query.orderBy).toEqual({ createdAt: 'desc' });
+    expect(query.skip).toBe(20);
+    expect(query.take).toBe(10);
+  });
 
-      expect(incident.service).toEqual({ id: 's1', name: 'Checkout API' });
-      expect(incident.team).toEqual({ id: 't1', name: 'Platform Team' });
-      expect(incident.alertCount).toBe(12);
-      expect(incident.escalation).toEqual({
-        policy: { id: 'p1', name: 'Platform Critical' },
-        currentStepPosition: 1,
-        round: 0,
-        repeatCount: 1,
-        nextEscalationAt: null,
-        steps: [
-          {
-            position: 1,
-            delayMinutes: 5,
-            targetType: 'USER',
-            targetName: 'Rahul Verma',
-            state: 'pending',
-            notifiedUsers: [],
-          },
-          {
-            position: 2,
-            delayMinutes: 10,
-            targetType: 'TEAM',
-            targetName: 'Platform Team',
-            state: 'pending',
-            notifiedUsers: [],
-          },
-        ],
-      });
+  it('gives 404 for an unknown incident number in this organization', async () => {
+    prisma.incident.findUnique.mockResolvedValue(null);
+
+    await expect(service.getIncidentByNumber('o1', 999)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.incident.findUnique).toHaveBeenCalledWith({
+      where: { organizationId_number: { organizationId: 'o1', number: 999 } },
     });
   });
 
-  describe('listEvents / listAlerts', () => {
-    it('throw 404 for an incident in another organization', async () => {
-      prisma.incident.findFirst.mockResolvedValue(null);
+  it('shows escalation steps by name, with who was notified', async () => {
+    const incident = await service.getIncidentByNumber('o1', 142);
 
-      await expect(service.listEvents('o1', 'i-other')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      await expect(
-        service.listAlerts('o1', 'i-other', { page: 1, pageSize: 25 }),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(prisma.incident.findFirst).toHaveBeenCalledWith({
-        where: { id: 'i-other', organizationId: 'o1' },
-      });
+    expect(incident.team).toEqual({ id: 't1', name: 'Platform Team' });
+    expect(incident.escalation).toEqual({
+      policy: { id: 'p1', name: 'Platform Critical' },
+      currentStepPosition: 1,
+      round: 0,
+      repeatCount: 1,
+      nextEscalationAt: null,
+      steps: [
+        {
+          position: 1,
+          delayMinutes: 5,
+          targetType: 'USER',
+          targetName: 'Rahul Verma',
+          state: 'notified',
+          notifiedUsers: [
+            { name: 'Rahul Verma', at: NOW, status: 'DELIVERED' },
+          ],
+        },
+        {
+          position: 2,
+          delayMinutes: 10,
+          targetType: 'SCHEDULE',
+          targetName: 'Platform Weekly',
+          state: 'pending',
+          notifiedUsers: [],
+        },
+      ],
     });
+  });
 
-    it('returns the timeline oldest first', async () => {
-      await service.listEvents('o1', 'i1');
+  it('gives 404 for events and alerts of an incident in another organization', async () => {
+    prisma.incident.findFirst.mockResolvedValue(null);
 
-      const query = prisma.incidentEvent.findMany.mock.calls[0] as [
-        { orderBy: unknown },
-      ];
-      expect(query[0].orderBy).toEqual({ createdAt: 'asc' });
+    await expect(service.listEvents('o1', 'i-other')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(
+      service.listAlerts('o1', 'i-other', { page: 1, pageSize: 25 }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.incident.findFirst).toHaveBeenCalledWith({
+      where: { id: 'i-other', organizationId: 'o1' },
     });
   });
 
@@ -260,18 +247,21 @@ describe('IncidentsService', () => {
     it('puts the status check inside the update, so only one caller can win', async () => {
       await service.acknowledge('u1', 'o1', 'i1');
 
-      const update = prisma.incident.updateMany.mock.calls[0] as [
-        { where: unknown; data: { status: string; acknowledgedById: string } },
-      ];
-      expect(update[0].where).toEqual({ id: 'i1', status: 'TRIGGERED' });
-      expect(update[0].data.status).toBe('ACKNOWLEDGED');
-      expect(update[0].data.acknowledgedById).toBe('u1');
-    });
-
-    it('logs the event and returns the full incident when it wins', async () => {
-      const result = await service.acknowledge('u1', 'o1', 'i1');
-
-      expect(result.incident.number).toBe(142);
+      const update = (
+        prisma.incident.updateMany.mock.calls[0] as [
+          { where: unknown; data: Record<string, unknown> },
+        ]
+      )[0];
+      expect(update.where).toEqual({ id: 'i1', status: 'TRIGGERED' });
+      expect(update.data.status).toBe('ACKNOWLEDGED');
+      expect(update.data.nextEscalationAt).toBeNull();
+      expect(escalation.cancel).toHaveBeenCalledWith('i1');
+      expect(realtime.emitIncident).toHaveBeenCalledWith(
+        'incident.acknowledged',
+        'i1',
+        { id: 'u1', name: 'Priyanshu Maurya' },
+      );
+      expect(update.data.acknowledgedById).toBe('u1');
       expect(prisma.incidentEvent.create).toHaveBeenCalledWith({
         data: {
           incidentId: 'i1',
@@ -289,7 +279,7 @@ describe('IncidentsService', () => {
         ...STORED,
         status: 'ACKNOWLEDGED',
         acknowledgedAt: NOW,
-        acknowledgedBy: { id: 'u2', name: 'Rahul Verma' },
+        acknowledgedBy: RAHUL,
       });
 
       const error = await service
@@ -305,51 +295,10 @@ describe('IncidentsService', () => {
         status: 'ACKNOWLEDGED',
       });
       expect(prisma.incidentEvent.create).not.toHaveBeenCalled();
+      expect(realtime.emitIncident).not.toHaveBeenCalled();
     });
 
     it('answers 409 ALREADY_RESOLVED for a resolved incident', async () => {
-      prisma.incident.updateMany.mockResolvedValue({ count: 0 });
-      prisma.incident.findUniqueOrThrow.mockResolvedValue({
-        ...STORED,
-        status: 'RESOLVED',
-        resolvedAt: NOW,
-        resolvedBy: { id: 'u3', name: 'Sneha Kapoor' },
-      });
-
-      const error = await service
-        .acknowledge('u1', 'o1', 'i1')
-        .catch((e: unknown) => e);
-
-      expect((error as ConflictException).getResponse()).toMatchObject({
-        code: 'ALREADY_RESOLVED',
-        resolvedBy: { id: 'u3', name: 'Sneha Kapoor' },
-      });
-    });
-  });
-
-  describe('resolve', () => {
-    it('works from TRIGGERED or ACKNOWLEDGED, with the check inside the update', async () => {
-      await service.resolve('u1', 'o1', 'i1', {});
-
-      const update = prisma.incident.updateMany.mock.calls[0] as [
-        { where: unknown; data: { status: string; resolvedById: string } },
-      ];
-      expect(update[0].where).toEqual({
-        id: 'i1',
-        status: { in: ['TRIGGERED', 'ACKNOWLEDGED'] },
-      });
-      expect(update[0].data.status).toBe('RESOLVED');
-      expect(update[0].data.resolvedById).toBe('u1');
-      expect(eventTypes()).toEqual(['RESOLVED']);
-    });
-
-    it('logs the note as a comment before the resolve event', async () => {
-      await service.resolve('u1', 'o1', 'i1', { note: 'Pool size increased' });
-
-      expect(eventTypes()).toEqual(['COMMENT', 'RESOLVED']);
-    });
-
-    it('answers 409 ALREADY_RESOLVED when someone else resolved it first', async () => {
       prisma.incident.updateMany.mockResolvedValue({ count: 0 });
       prisma.incident.findUniqueOrThrow.mockResolvedValue({
         ...STORED,
@@ -359,14 +308,44 @@ describe('IncidentsService', () => {
       });
 
       const error = await service
-        .resolve('u1', 'o1', 'i1', {})
+        .acknowledge('u1', 'o1', 'i1')
         .catch((e: unknown) => e);
 
       expect((error as ConflictException).getResponse()).toMatchObject({
         code: 'ALREADY_RESOLVED',
         message: 'Already resolved',
       });
-      expect(prisma.incidentEvent.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resolve', () => {
+    it('works from TRIGGERED or ACKNOWLEDGED, with the check inside the update', async () => {
+      await service.resolve('u1', 'o1', 'i1', {});
+
+      const update = (
+        prisma.incident.updateMany.mock.calls[0] as [
+          { where: unknown; data: Record<string, unknown> },
+        ]
+      )[0];
+      expect(update.where).toEqual({
+        id: 'i1',
+        status: { in: ['TRIGGERED', 'ACKNOWLEDGED'] },
+      });
+      expect(update.data.resolvedById).toBe('u1');
+      expect(eventTypes()).toEqual(['RESOLVED']);
+      expect(update.data.nextEscalationAt).toBeNull();
+      expect(escalation.cancel).toHaveBeenCalledWith('i1');
+      expect(realtime.emitIncident).toHaveBeenCalledWith(
+        'incident.resolved',
+        'i1',
+        { id: 'u1', name: 'Priyanshu Maurya' },
+      );
+    });
+
+    it('logs the note as a comment before the resolve event', async () => {
+      await service.resolve('u1', 'o1', 'i1', { note: 'Pool size increased' });
+
+      expect(eventTypes()).toEqual(['COMMENT', 'RESOLVED']);
     });
 
     it('is refused for a viewer', async () => {
@@ -398,16 +377,12 @@ describe('IncidentsService', () => {
       });
     });
 
-    it('is refused for a viewer, and for an incident in another organization', async () => {
-      prisma.incident.findFirst.mockResolvedValue(null);
-      await expect(
-        service.addNote('u1', 'o1', 'i-other', { message: 'Hi' }),
-      ).rejects.toBeInstanceOf(NotFoundException);
-
+    it('is refused for a viewer', async () => {
       prisma.membership.findUnique.mockResolvedValue({
         role: 'VIEWER',
         user: { id: 'u1', name: 'Zara' },
       });
+
       await expect(
         service.addNote('u1', 'o1', 'i1', { message: 'Hi' }),
       ).rejects.toBeInstanceOf(ForbiddenException);

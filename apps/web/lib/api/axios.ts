@@ -55,7 +55,8 @@ api.interceptors.response.use(
 
     const onAuthPage =
       AUTH_PAGES.includes(window.location.pathname) ||
-      window.location.pathname.startsWith("/invite/");
+      window.location.pathname.startsWith("/invite/") ||
+      window.location.pathname.startsWith("/a/");
     const isMeCall = config?.url === "/auth/me";
     const isRefreshCall = config?.url === "/auth/refresh";
 

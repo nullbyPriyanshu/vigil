@@ -10,7 +10,6 @@ import type { Request, Response } from 'express';
 import { ApiKeysService } from 'src/api-keys/api-keys.service';
 import { RateLimiter } from './rateLimiter';
 
-// What the guard attaches to the request once the key checks out.
 export type CurrentApiKey = {
   id: string;
   serviceId: string;
@@ -19,8 +18,6 @@ export type CurrentApiKey = {
 
 export type ApiKeyRequest = Request & { apiKey: CurrentApiKey };
 
-// Protects the alert endpoints. Machines don't log in, so there's no JWT
-// here: the X-Vigil-Key header is the whole identity.
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(
@@ -28,25 +25,25 @@ export class ApiKeyGuard implements CanActivate {
     private readonly rateLimiter: RateLimiter,
   ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const http = context.switchToHttp();
-    const request = http.getRequest<ApiKeyRequest>();
+  async canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<ApiKeyRequest>();
+    const response = context.switchToHttp().getResponse<Response>();
 
-    const rawKey = request.headers['x-vigil-key'];
-    if (typeof rawKey !== 'string' || rawKey === '') {
+    const key = request.headers['x-vigil-key'];
+    if (typeof key !== 'string' || key === '') {
       throw new UnauthorizedException('Missing X-Vigil-Key header');
     }
 
-    const apiKey = await this.apiKeysService.findActiveKey(rawKey);
+    const apiKey = await this.apiKeysService.findActiveKey(key);
     if (!apiKey) {
       throw new UnauthorizedException('Invalid or revoked API key');
     }
 
-    const waitSeconds = this.rateLimiter.check(apiKey.id);
-    if (waitSeconds > 0) {
-      http.getResponse<Response>().setHeader('Retry-After', waitSeconds);
+    const secondsToWait = await this.rateLimiter.getSecondsToWait(apiKey.id);
+    if (secondsToWait > 0) {
+      response.setHeader('Retry-After', secondsToWait);
       throw new HttpException(
-        `Rate limit reached. Try again in ${waitSeconds} seconds`,
+        `Rate limit reached. Try again in ${secondsToWait} seconds`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }

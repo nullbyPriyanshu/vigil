@@ -74,3 +74,23 @@ export const revokeApiKeyApi = (serviceId: string, keyId: string) =>
   api.delete<{ id: string; revokedAt: string }>(
     `/services/${serviceId}/keys/${keyId}`,
   );
+
+// Creates a service together with a ready-made default escalation policy.
+export const createServiceWithDefaultPolicyApi = (data: {
+  name: string;
+  teamId: string;
+  scheduleId?: string;
+}) =>
+  api.post<{
+    service: { id: string; name: string };
+    escalationPolicy: { id: string; name: string };
+  }>("/onboarding/service", data);
+
+// Sends a real alert through the real pipeline, as if a monitoring tool had.
+export const sendTestAlertApi = (serviceId: string) =>
+  api.post<{
+    alertId: string;
+    incidentId: string;
+    incidentNumber: number;
+    deduplicated: boolean;
+  }>(`/services/${serviceId}/test-alert`, {});

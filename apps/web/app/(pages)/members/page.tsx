@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LoadError } from "@/components/shared/load-error";
 import { useQuery } from "@tanstack/react-query";
 import { PencilIcon } from "lucide-react";
 
@@ -26,7 +27,7 @@ import { ROLE_LABELS, canManageMembers } from "@/lib/roles";
 
 export default function MembersPage() {
   const { session } = useAuth();
-  const { data: members, isLoading } = useQuery({
+  const { data: members, isLoading, isError, refetch } = useQuery({
     queryKey: ["members"],
     queryFn: async () => (await getMembersApi()).data.data,
   });
@@ -41,6 +42,10 @@ export default function MembersPage() {
   // The owner can't be edited here, and nobody can edit themselves.
   const isEditable = (member: Member) =>
     canManage && member.role !== "OWNER" && member.userId !== session?.user.id;
+
+  if (isError && !members) {
+    return <LoadError what="the members" onRetry={() => refetch()} />;
+  }
 
   return (
     <div className="flex flex-col gap-6">

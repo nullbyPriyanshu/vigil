@@ -8,7 +8,6 @@ import { ApiKeysService } from './api-keys.service';
   imports: [AuthModule, MembersModule],
   controllers: [ApiKeysController],
   providers: [ApiKeysService],
-  // The alerts module checks incoming keys with this service.
   exports: [ApiKeysService],
 })
 export class ApiKeysModule {}

@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeftIcon, Loader2 } from "lucide-react";
 
+import { EscalationCountdown } from "@/components/incidents/escalation-countdown";
 import { IncidentAlerts } from "@/components/incidents/incident-alerts";
 import { IncidentTimeline } from "@/components/incidents/incident-timeline";
 import { ResolveIncidentDialog } from "@/components/incidents/resolve-incident-dialog";
@@ -41,16 +42,16 @@ export default function IncidentPage({
   const { session } = useAuth();
   const [resolving, setResolving] = useState(false);
 
-  const { data: incident, error, isLoading } = useQuery({
+  const { data: incident, error, isLoading, refetch } = useQuery({
     queryKey: ["incident", number],
     queryFn: async () => (await getIncidentApi(number)).data,
     enabled: Number.isInteger(number),
     retry: false,
-    // There's no live connection yet, so an open incident is re-checked
-    // every 10 seconds to pick up what other people do.
+    // Live updates reload an incident when it changes; the timer is only
+    // a safety net while it's still open.
     refetchInterval: (query) =>
       query.state.data && query.state.data.status !== "RESOLVED"
-        ? 10 * 1000
+        ? 30 * 1000
         : false,
     staleTime: 0,
   });
@@ -126,12 +127,33 @@ export default function IncidentPage({
               ? "There's no incident with that number here."
               : "Please try again in a moment."}
           </p>
+          {!missing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              Try again
+            </Button>
+          )}
         </div>
       </div>
     );
   }
 
   const { escalation } = incident;
+
+  // What the countdown is counting down to.
+  const following = escalation.steps.find(
+    (step) => step.position === escalation.currentStepPosition + 1,
+  );
+  let nextStepText = "the policy ends";
+  if (following) {
+    nextStepText = `it escalates to ${following.targetName}`;
+  } else if (escalation.round < escalation.repeatCount) {
+    nextStepText = `it starts again with ${escalation.steps[0]?.targetName ?? "step 1"}`;
+  }
   const open = incident.status !== "RESOLVED";
 
   return (
@@ -263,7 +285,16 @@ export default function IncidentPage({
                       {step.position}
                     </span>
                     <div className="min-w-0 pt-0.5">
-                      <p className="truncate text-foreground">{step.targetName}</p>
+                      <p className="truncate text-foreground">
+                        {step.targetName}
+                        {open &&
+                          incident.status === "TRIGGERED" &&
+                          step.position === escalation.currentStepPosition && (
+                            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                              Current
+                            </span>
+                          )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {step.notifiedUsers.length > 0
                           ? `Notified ${step.notifiedUsers.map((u) => u.name).join(", ")}`
@@ -273,11 +304,13 @@ export default function IncidentPage({
                   </li>
                 ))}
               </ol>
-              {open && escalation.nextEscalationAt && (
-                <p className="mt-4 border-t border-black/[0.06] pt-3 text-sm text-muted-foreground dark:border-white/[0.06]">
-                  Next step at {formatDateTime(escalation.nextEscalationAt)}
-                </p>
-              )}
+              {incident.status === "TRIGGERED" &&
+                escalation.nextEscalationAt && (
+                  <EscalationCountdown
+                    nextEscalationAt={escalation.nextEscalationAt}
+                    next={nextStepText}
+                  />
+                )}
             </CardContent>
           </Card>
         </div>

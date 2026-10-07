@@ -37,7 +37,7 @@ export default function TeamPage({
   const { session } = useAuth();
   const [dialog, setDialog] = useState<OpenDialog>(null);
 
-  const { data: team, error, isLoading } = useQuery({
+  const { data: team, error, isLoading, refetch } = useQuery({
     queryKey: ["team", id],
     queryFn: async () => (await getTeamApi(id)).data,
     retry: false,
@@ -72,6 +72,16 @@ export default function TeamPage({
               ? "It may have been deleted, or the link is wrong."
               : "Please try again in a moment."}
           </p>
+          {!missing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              Try again
+            </Button>
+          )}
         </div>
       </div>
     );

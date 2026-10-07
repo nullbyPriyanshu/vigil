@@ -14,7 +14,6 @@ import {
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 
-// An empty description means "no description", same as leaving it out.
 const trimToNull = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() || null : value;
 
@@ -41,8 +40,6 @@ export class CreateServiceDto {
   })
   escalationPolicyId!: string;
 
-  // Minutes after which an untouched incident closes itself. null (or
-  // leaving it out) means never. ValidateIf skips the number checks for null.
   @ValidateIf((dto: CreateServiceDto) => dto.autoResolveMinutes != null)
   @IsInt({ message: 'autoResolveMinutes must be a whole number of minutes' })
   @Min(1, { message: 'autoResolveMinutes must be at least 1' })

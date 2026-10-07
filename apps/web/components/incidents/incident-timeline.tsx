@@ -22,6 +22,7 @@ const DOT: Partial<Record<IncidentEvent["type"], string>> = {
   CREATED: "bg-red-500",
   ACKNOWLEDGED: "bg-amber-500",
   RESOLVED: "bg-emerald-500",
+  AUTO_RESOLVED: "bg-emerald-500",
 };
 
 // Everything that happened to the incident, oldest first, with a box to
@@ -42,7 +43,8 @@ export function IncidentTimeline({
   const { data: events } = useQuery({
     queryKey: ["incident-events", incidentId],
     queryFn: async () => (await getIncidentEventsApi(incidentId)).data.data,
-    refetchInterval: live ? 10 * 1000 : false,
+    // Comments don't send a live event, so this still checks now and then.
+    refetchInterval: live ? 15 * 1000 : false,
     staleTime: 0,
   });
 

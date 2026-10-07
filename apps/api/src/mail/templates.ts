@@ -202,3 +202,53 @@ Vigil`;
 
   return { subject, html, text };
 }
+
+export function incidentEmail(opts: {
+  name: string;
+  incidentNumber: number;
+  title: string;
+  severity: string;
+  serviceName: string;
+  acknowledgeUrl: string;
+  resolveUrl: string;
+  incidentUrl: string;
+}): Email {
+  const subject = `[${opts.severity}] INC-${opts.incidentNumber}: ${opts.title}`;
+
+  const html = layout(
+    escapeHtml(subject),
+    [
+      p(`Hi ${escapeHtml(opts.name)},`),
+      p(
+        `<strong>${escapeHtml(opts.title)}</strong><br />INC-${opts.incidentNumber} &middot; ${escapeHtml(opts.serviceName)} &middot; ${opts.severity}`,
+      ),
+      button(opts.acknowledgeUrl, 'Acknowledge'),
+      p(
+        `<a href="${opts.resolveUrl}" style="color:#52525b;">Resolve it</a> &nbsp;&middot;&nbsp; <a href="${opts.incidentUrl}" style="color:#52525b;">Open the incident</a>`,
+        '#52525b',
+      ),
+      p(
+        'You got this email because you are next in line for this service. The links work for 24 hours.',
+        '#71717a',
+      ),
+    ].join(''),
+  );
+
+  const text = `Hi ${opts.name},
+
+${opts.title}
+INC-${opts.incidentNumber} - ${opts.serviceName} - ${opts.severity}
+
+Acknowledge:
+${opts.acknowledgeUrl}
+
+Resolve:
+${opts.resolveUrl}
+
+Open the incident:
+${opts.incidentUrl}
+
+Vigil`;
+
+  return { subject, html, text };
+}

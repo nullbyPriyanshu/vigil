@@ -23,8 +23,6 @@ import { IncidentsService } from './incidents.service';
 
 type AuthedRequest = Request & { user: CurrentUserPayload };
 
-// Everyone in the organization can read incidents. Acknowledging, resolving
-// and commenting are for everyone except viewers.
 @Controller('incidents')
 @UseGuards(AuthGuard, RolesGuard)
 export class IncidentsController {
@@ -35,8 +33,6 @@ export class IncidentsController {
     return this.incidentsService.listIncidents(req.user.organizationId, query);
   }
 
-  // The page URL uses the human number (/incidents/142). Everything below
-  // uses the incident's id.
   @Get(':number')
   getIncident(
     @Req() req: AuthedRequest,

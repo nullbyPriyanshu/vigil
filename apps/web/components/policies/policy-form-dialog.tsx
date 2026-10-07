@@ -37,6 +37,7 @@ import {
   type Policy,
   type StepInput,
 } from "@/lib/api/policies";
+import { getSchedulesApi } from "@/lib/api/schedules";
 import { getTeamsApi } from "@/lib/api/teams";
 
 const REPEAT_ITEMS = [
@@ -75,7 +76,7 @@ export function PolicyFormDialog({
     policy
       ? policy.steps.map((step) => ({
           key: step.position,
-          targetType: step.targetType === "TEAM" ? "TEAM" : "USER",
+          targetType: step.targetType,
           targetId: step.target.id,
           delayMinutes: String(step.delayMinutes),
         }))
@@ -93,6 +94,11 @@ export function PolicyFormDialog({
     queryFn: async () => (await getTeamsApi()).data.data,
   });
 
+  const { data: schedules } = useQuery({
+    queryKey: ["schedules"],
+    queryFn: async () => (await getSchedulesApi()).data.data,
+  });
+
   // Viewers can't respond to incidents, so they can't be notified.
   const people = (members ?? [])
     .filter((member) => member.role !== "VIEWER")
@@ -101,6 +107,16 @@ export function PolicyFormDialog({
     value: team.id,
     label: team.name,
   }));
+  const scheduleOptions = (schedules ?? []).map((schedule) => ({
+    value: schedule.id,
+    label: schedule.name,
+  }));
+  const optionsFor = {
+    USER: people,
+    TEAM: teamOptions,
+    SCHEDULE: scheduleOptions,
+  };
+  const WORDS = { USER: "person", TEAM: "team", SCHEDULE: "schedule" };
 
   const mutation = useMutation({
     mutationFn: async (stepInputs: StepInput[]) => {
@@ -133,10 +149,10 @@ export function PolicyFormDialog({
 
     const stepInputs: StepInput[] = [];
     for (const [index, step] of steps.entries()) {
-      const options = step.targetType === "USER" ? people : teamOptions;
+      const options = optionsFor[step.targetType];
       if (!options.some((option) => option.value === step.targetId)) {
         setStepsError(
-          `Step ${index + 1}: choose a ${step.targetType === "USER" ? "person" : "team"} to notify`,
+          `Step ${index + 1}: choose a ${WORDS[step.targetType]} to notify`,
         );
         return;
       }
@@ -198,7 +214,7 @@ export function PolicyFormDialog({
 
           <div className="space-y-2">
             <Label>Steps</Label>
-            {members && teams ? (
+            {members && teams && schedules ? (
               <StepEditor
                 steps={steps}
                 onChange={(next) => {
@@ -207,6 +223,7 @@ export function PolicyFormDialog({
                 }}
                 people={people}
                 teams={teamOptions}
+                schedules={scheduleOptions}
               />
             ) : (
               <div className="h-28 animate-pulse rounded-lg bg-black/[0.04] dark:bg-white/[0.04]" />

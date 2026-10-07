@@ -2,9 +2,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 import { IncidentStatus, Severity } from 'src/generated/prisma/enums';
 
-// ?page=1&pageSize=25, shared by every paginated list.
 export class PaginationDto {
-  // Query strings arrive as text; @Type turns "2" into the number 2.
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'page must be a whole number' })
@@ -19,7 +17,6 @@ export class PaginationDto {
   pageSize: number = 25;
 }
 
-// ?status=TRIGGERED&service=<uuid>&severity=CRITICAL, all optional.
 export class ListIncidentsDto extends PaginationDto {
   @IsOptional()
   @IsEnum(IncidentStatus, {

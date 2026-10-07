@@ -8,6 +8,7 @@ import { ChevronRightIcon, PlusIcon, WorkflowIcon } from "lucide-react";
 import { PolicyFormDialog } from "@/components/policies/policy-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { LoadError } from "@/components/shared/load-error";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +24,7 @@ export default function PoliciesPage() {
   const { session } = useAuth();
   const [creating, setCreating] = useState(false);
 
-  const { data: policies, isLoading } = useQuery({
+  const { data: policies, isLoading, isError, refetch } = useQuery({
     queryKey: ["policies"],
     queryFn: async () => (await getPoliciesApi()).data.data,
   });
@@ -45,7 +46,9 @@ export default function PoliciesPage() {
         }
       />
 
-      {isLoading || !policies ? (
+      {isError && !policies ? (
+        <LoadError what="the policies" onRetry={() => refetch()} />
+      ) : isLoading || !policies ? (
         <Skeleton className="h-40 w-full rounded-xl" />
       ) : policies.length === 0 ? (
         <EmptyState

@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
+import { ArrowLeftIcon, Loader2, PencilIcon, SendIcon } from "lucide-react";
 
 import { ApiKeysCard } from "@/components/services/api-keys-card";
 import { ServiceFormDialog } from "@/components/services/service-form-dialog";
@@ -17,7 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { deleteServiceApi, getServiceApi } from "@/lib/api/services";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import {
+  deleteServiceApi,
+  getServiceApi,
+  sendTestAlertApi,
+} from "@/lib/api/services";
 import { formatMinutes } from "@/lib/duration";
 import { formatDate, timeAgo } from "@/lib/time";
 import { canManageMembers } from "@/lib/roles";
@@ -38,13 +43,40 @@ export default function ServicePage({
   const { session } = useAuth();
   const [dialog, setDialog] = useState<OpenDialog>(null);
 
-  const { data: service, error, isLoading } = useQuery({
+  const { data: service, error, isLoading, refetch } = useQuery({
     queryKey: ["service", id],
     queryFn: async () => (await getServiceApi(id)).data,
     retry: false,
   });
 
   const canManage = canManageMembers(session?.role);
+  const canRespond = !!session && session.role !== "VIEWER";
+
+  // Fires a real alert at this service, exactly as a monitoring tool would.
+  const testAlert = useMutation({
+    mutationFn: async () => (await sendTestAlertApi(id)).data,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["service", id] });
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      toast.success(
+        result.deduplicated
+          ? `Test alert joined INC-${result.incidentNumber}`
+          : `Test alert opened INC-${result.incidentNumber}`,
+        {
+          description: result.deduplicated
+            ? "It's already open, so nobody is emailed again."
+            : "Whoever is first on the escalation policy gets an email now.",
+          action: {
+            label: "Open",
+            onClick: () => router.push(`/incidents/${result.incidentNumber}`),
+          },
+        },
+      );
+    },
+    onError: (err) => {
+      toast.error(getApiErrorMessage(err, "Couldn't send the test alert."));
+    },
+  });
 
   if (isLoading) {
     return (
@@ -71,6 +103,16 @@ export default function ServicePage({
               ? "It may have been deleted, or the link is wrong."
               : "Please try again in a moment."}
           </p>
+          {!missing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              Try again
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -84,15 +126,32 @@ export default function ServicePage({
         title={service.name}
         description={service.description ?? undefined}
         action={
-          canManage ? (
-            <Button
-              variant="outline"
-              onClick={() => setDialog("edit")}
-              className="h-9 cursor-pointer px-3.5"
-            >
-              <PencilIcon className="size-3.5" />
-              Edit service
-            </Button>
+          canRespond ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                disabled={testAlert.isPending}
+                onClick={() => testAlert.mutate()}
+                className="h-9 cursor-pointer px-3.5"
+              >
+                {testAlert.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <SendIcon className="size-3.5" />
+                )}
+                Send a test alert
+              </Button>
+              {canManage && (
+                <Button
+                  variant="outline"
+                  onClick={() => setDialog("edit")}
+                  className="h-9 cursor-pointer px-3.5"
+                >
+                  <PencilIcon className="size-3.5" />
+                  Edit service
+                </Button>
+              )}
+            </div>
           ) : undefined
         }
       />

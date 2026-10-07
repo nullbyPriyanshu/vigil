@@ -8,8 +8,6 @@ export class CreateInvitationDto {
   @IsEmail({}, { message: 'Enter a valid email address' })
   email!: string;
 
-  // OWNER isn't in the list on purpose: ownership only moves through
-  // "transfer ownership".
   @IsIn(ASSIGNABLE_ROLES, {
     message: 'Role must be one of ADMIN, RESPONDER or VIEWER',
   })

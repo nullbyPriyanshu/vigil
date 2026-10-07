@@ -5,5 +5,6 @@ allowBuilds:
   '@parcel/watcher': true
   '@prisma/engines': true
   bcrypt: true
+  msgpackr-extract: false
   prisma: true
   unrs-resolver: true

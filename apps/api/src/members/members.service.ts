@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -88,8 +89,22 @@ export class MembersService {
       throw new BadRequestException('The owner cannot be removed');
     }
 
-    // TODO (schedules): once schedules exist, throw a 409 ConflictException
-    // here if this user is still a participant on one.
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        organizationId,
+        participants: { some: { userId: targetUserId } },
+      },
+    });
+    if (schedules.length > 0) {
+      const word = schedules.length === 1 ? 'schedule' : 'schedules';
+      throw new ConflictException({
+        message: `User is on ${schedules.length} ${word}. Take them off the rotation first`,
+        schedules: schedules.map((schedule) => ({
+          id: schedule.id,
+          name: schedule.name,
+        })),
+      });
+    }
 
     // Only the membership goes. The user's account stays, and without a
     // membership they can no longer log in or refresh their session.

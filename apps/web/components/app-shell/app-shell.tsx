@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/app-shell/app-header";
+import { RealtimeListener } from "@/components/app-shell/realtime-listener";
 import { Sidebar } from "@/components/app-shell/sidebar";
 
 // Frame every authenticated page shares: navbar and sidebar sit flush on
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#09090b]">
+      <RealtimeListener />
       <AppHeader onMenuClick={() => setMobileNavOpen(true)} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
