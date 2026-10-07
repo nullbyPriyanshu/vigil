@@ -77,7 +77,7 @@ export default function Home() {
         <section className="relative overflow-hidden">
           <div className="animate-card-in mx-auto flex max-w-5xl flex-col items-center px-4 pt-14 pb-16 text-center sm:px-6 sm:pt-20 lg:pb-24">
             <p className="text-[11px] font-medium tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400">
-              Vigil · On-call and incident response
+              Vigil · Incident response for small teams
             </p>
 
             <ParticleLogo className="mt-6 w-[min(21rem,72vw)]" />

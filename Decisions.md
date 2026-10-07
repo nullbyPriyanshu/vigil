@@ -63,3 +63,24 @@
 14. The web app has one accent colour, and it is the text colour. Red and
     amber are kept only for incident status and severity, so colour always
     means something.
+
+15. Uptime monitors reuse the alert pipeline. A failed check calls the same
+    `createAlert` a webhook does, with the monitor's id as the dedup key,
+    so incidents, escalation, emails and auto-close needed no new code.
+
+16. One queue job runs every minute and checks whichever monitors are due,
+    instead of one repeating job per monitor. Fewer moving parts, and
+    adding or deleting a monitor never has to touch the queue.
+
+17. A monitor alerts after two failures in a row, not one, because a
+    single dropped request is normal on the internet and nobody should be
+    woken for it.
+
+18. Monitors refuse private and local addresses (127.x, 10.x, 192.168.x
+    and so on), checked both when saving and before every visit, and they
+    don't follow redirects. Otherwise anyone with an account could make
+    the server probe its own network.
+    `ALLOW_PRIVATE_MONITOR_URLS=true` turns this off for local testing.
+
+19. Check results are kept for 30 days and then deleted by the same
+    minute job, so the table can't grow without limit.

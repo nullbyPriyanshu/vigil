@@ -11,6 +11,9 @@ Built by [Priyanshu Maurya](https://github.com/nullbyPriyanshu).
 - **Alerts in.** Services get API keys. Anything that can send a webhook
   (curl, Sentry, Grafana, UptimeRobot) can open an incident. Repeats of the
   same problem are folded into one incident.
+- **Uptime monitors.** Give Vigil an address and it visits it every 1, 5
+  or 15 minutes. Two failures in a row open an incident; the incident
+  closes by itself when the address answers again.
 - **The right person.** Daily or weekly rotations decide who is on call,
   in each schedule's own timezone.
 - **Escalation.** A policy is a list of steps: notify this person, team or
@@ -57,8 +60,7 @@ API_KEY_PEPPER=another-long-random-string
 RESEND_API_KEY=            # from resend.com
 RESEND_WEBHOOK_SECRET=     # optional, for delivery status
 MAIL_FROM="Vigil <onboarding@resend.dev>"
-SEED_OWNER_EMAIL=          # only for `pnpm seed`: your own email
-SEED_PASSWORD=             # only for `pnpm seed`: the password to log in with
+KEEP_AWAKE_URL=            # optional: this API's own public /health address
 ```
 
 Create `apps/web/.env.local`:
@@ -73,17 +75,12 @@ Then set up the database and start everything:
 ```bash
 cd apps/api
 npx prisma migrate deploy --config prisma7.config.ts
-pnpm seed                     # optional: a full demo organization
 cd ../..
 pnpm dev                      # web on :3000, API on :3001
 ```
 
-`pnpm seed` creates the "Vigil" organization with 7 people, 3 teams,
-3 schedules, 3 escalation policies, 7 services and 84 incidents. You are
-the owner (`SEED_OWNER_EMAIL`) and everyone logs in with `SEED_PASSWORD`;
-neither is stored in the code. It prints the logins and API keys when it
-finishes. Running it again replaces that organization and nothing else, and
-an owner account that already exists keeps its own password.
+Then open http://localhost:3000, sign up, and the setup wizard walks you
+through your first team, service and test alert.
 
 ## Tests
 
@@ -96,6 +93,18 @@ The browser tests need `npx playwright install chromium` once. They sign in
 as their own test person (`delivered+e2e@resend.dev`) in their own
 "E2E Tests" organization, which they create on first run and keep. They
 never touch another organization.
+
+## Hosting on a free plan that sleeps
+
+Free hosts such as Render put a server to sleep after about 15 minutes
+without a visitor, and a sleeping Vigil can't page anyone. Set
+`KEEP_AWAKE_URL` to the API's own public health address, for example
+`https://your-api.onrender.com/health`, and the API visits it once a
+minute so it never looks idle.
+
+This keeps a running server awake. It cannot wake one that has already
+stopped, and it cannot tell you when Vigil itself is down, so also point an
+outside checker (UptimeRobot is free) at the same address.
 
 ## Sending an alert
 

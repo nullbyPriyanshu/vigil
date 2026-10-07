@@ -16,6 +16,7 @@ const GO_TO = [
   { key: "d", label: "Dashboard", href: "/dashboard" },
   { key: "i", label: "Incidents", href: "/incidents" },
   { key: "s", label: "Services", href: "/services" },
+  { key: "u", label: "Monitors", href: "/monitors" },
   { key: "p", label: "Policies", href: "/policies" },
   { key: "c", label: "Schedules", href: "/schedules" },
   { key: "m", label: "Members", href: "/members" },

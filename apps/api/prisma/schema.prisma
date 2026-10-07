@@ -87,6 +87,7 @@ model Organization {
   schedules          Schedule[]
   services           Service[]
   incidents          Incident[]
+  monitors           Monitor[]
 }
 
 model Membership {
@@ -265,6 +266,7 @@ model Service {
   apiKeys   ApiKey[]
   alerts    Alert[]
   incidents Incident[]
+  monitors  Monitor[]
 
   @@unique([organizationId, name])
 }
@@ -284,6 +286,53 @@ model ApiKey {
   alerts Alert[]
 
   @@index([serviceId])
+}
+
+// ==================== Uptime monitors ====================
+
+enum MonitorStatus {
+  PENDING
+  UP
+  DOWN
+}
+
+// A URL that Vigil visits every few minutes.
+// When it stops answering, an alert is raised for its service.
+model Monitor {
+  id              String        @id @default(uuid())
+  name            String
+  url             String
+  intervalMinutes Int           @default(1)
+  status          MonitorStatus @default(PENDING)
+  failCount       Int           @default(0)
+  lastCheckedAt   DateTime?
+  lastResponseMs  Int?
+  createdAt       DateTime      @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  checks MonitorCheck[]
+
+  @@index([organizationId])
+}
+
+// One visit to a monitor's URL and what happened.
+model MonitorCheck {
+  id         String   @id @default(uuid())
+  up         Boolean
+  statusCode Int?
+  responseMs Int
+  error      String?
+  checkedAt  DateTime @default(now())
+
+  monitorId String
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, checkedAt])
 }
 
 // ==================== Alerts and incidents ====================

@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeftIcon, Loader2, PencilIcon, SendIcon } from "lucide-react";
 
+import { MonitorsCard } from "@/components/services/monitors-card";
 import { IntegrationCard } from "@/components/services/integration-card";
 import { ApiKeysCard } from "@/components/services/api-keys-card";
 import { ServiceFormDialog } from "@/components/services/service-form-dialog";
@@ -192,6 +193,7 @@ export default function ServicePage({
 
         <div className="flex min-w-0 flex-col gap-4">
           {canManage && <ApiKeysCard serviceId={service.id} />}
+          <MonitorsCard serviceId={service.id} />
           {canManage && <IntegrationCard />}
 
           <Card>
