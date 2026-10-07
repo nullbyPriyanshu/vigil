@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { LoadError } from "@/components/shared/load-error";
 import { useQuery } from "@tanstack/react-query";
-import { PencilIcon } from "lucide-react";
+import {
+  PencilIcon,
+  UsersRoundIcon,
+} from "lucide-react";
 
 import { InviteMemberDialog } from "@/components/members/invite-member-dialog";
 import { ManageMemberDialog } from "@/components/members/manage-member-dialog";
@@ -50,6 +53,7 @@ export default function MembersPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={UsersRoundIcon}
         title="Members"
         description="Everyone in your organization and what they're allowed to do."
         action={canManage ? <InviteMemberDialog /> : undefined}

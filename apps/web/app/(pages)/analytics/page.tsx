@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRightIcon,
+  BarChart3Icon,
   CheckCheckIcon,
   SirenIcon,
   TimerIcon,
@@ -74,6 +75,7 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={BarChart3Icon}
         title="Analytics"
         description="How many incidents you get, and how fast they're picked up and fixed."
         action={

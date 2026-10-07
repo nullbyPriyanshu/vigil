@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { PlusIcon, ServerIcon } from "lucide-react";
+import {
+  BoxesIcon,
+  PlusIcon,
+  ServerIcon,
+} from "lucide-react";
 
 import { ServiceFormDialog } from "@/components/services/service-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -38,6 +42,7 @@ export default function ServicesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={BoxesIcon}
         title="Services"
         description="The things that can break. Each one belongs to a team and follows an escalation policy."
         action={
@@ -79,7 +84,7 @@ export default function ServicesPage() {
                   Escalation policy
                 </TableHead>
                 <TableHead className="h-10 px-(--card-spacing) text-right text-xs font-medium text-muted-foreground">
-                  Open incidents
+                  Status
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -89,12 +94,16 @@ export default function ServicesPage() {
                   <TableCell className="max-w-72 px-(--card-spacing) py-3">
                     <Link
                       href={`/services/${service.id}`}
-                      className="block truncate rounded-sm font-medium text-foreground outline-none hover:underline hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                      className="flex items-center gap-2.5 rounded-sm font-medium text-foreground outline-none hover:underline hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                     >
-                      {service.name}
+                      {/* Green: nothing open. Red: has open incidents. */}
+                      <span
+                        className={`size-2 shrink-0 rounded-full ${service.openIncidentCount > 0 ? "bg-red-500" : "bg-emerald-500"}`}
+                      />
+                      <span className="truncate">{service.name}</span>
                     </Link>
                     {service.description && (
-                      <p className="mt-0.5 truncate text-muted-foreground">
+                      <p className="mt-0.5 truncate pl-[18px] text-muted-foreground">
                         {service.description}
                       </p>
                     )}
@@ -105,8 +114,16 @@ export default function ServicesPage() {
                   <TableCell className="px-3 py-3 text-zinc-700 dark:text-zinc-300">
                     {service.escalationPolicy.name}
                   </TableCell>
-                  <TableCell className="px-(--card-spacing) py-3 text-right text-muted-foreground tabular-nums">
-                    {service.openIncidentCount}
+                  <TableCell className="px-(--card-spacing) py-3 text-right">
+                    {service.openIncidentCount > 0 ? (
+                      <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 text-xs font-medium text-red-600 tabular-nums dark:text-red-400">
+                        {service.openIncidentCount} open
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Operational
+                      </span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

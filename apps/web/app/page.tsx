@@ -12,6 +12,7 @@ import {
 import { HeroActions } from "@/components/home/hero-actions";
 import { LandingNavbar } from "@/components/home/landing-navbar";
 import { HeroScene } from "@/components/home/hero-scene";
+import { WorldMapBackdrop } from "@/components/home/world-map-backdrop";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { ProductShot } from "@/components/home/product-shot";
 import { ProductStage } from "@/components/home/product-stage";
@@ -74,8 +75,18 @@ export default function Home() {
 
       <main>
         {/* ---------- Hero ---------- */}
-        <section className="overflow-hidden">
-          <div className="mx-auto grid max-w-7xl gap-x-8 px-4 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pt-24 lg:pb-10">
+        <section className="relative overflow-hidden">
+          {/* The map runs the full width of the page. A mask leaves it at
+              20% strength where the headline sits, so the text stays easy
+              to read, and lets it come up to full on the right. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-20 lg:opacity-100 lg:[mask-image:linear-gradient(to_right,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.2)_42%,black_64%)]"
+          >
+            <WorldMapBackdrop emphasis={2.4} />
+          </div>
+
+          <div className="relative mx-auto grid max-w-7xl gap-x-8 px-4 pt-14 pb-12 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pt-24 lg:pb-16">
             <div className="animate-card-in">
               <p className="inline-flex items-center gap-2.5 rounded-full border border-black/10 px-3.5 py-1.5 text-[11px] font-medium tracking-[0.18em] text-zinc-600 uppercase dark:border-white/10 dark:text-zinc-400">
                 <span aria-hidden className="size-1.5 rounded-full bg-emerald-500" />

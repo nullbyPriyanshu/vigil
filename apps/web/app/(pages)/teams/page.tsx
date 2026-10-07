@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { UsersIcon } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { LoadError } from "@/components/shared/load-error";
@@ -28,6 +31,7 @@ export default function TeamsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={UsersIcon}
         title="Teams"
         description="Named groups of people who share services and on-call duty."
         action={canManage ? <CreateTeamDialog /> : undefined}
@@ -76,9 +80,10 @@ function TeamCard({ team }: { team: TeamSummary }) {
   return (
     <Link
       href={`/teams/${team.id}`}
-      className="flex h-full flex-col gap-5 rounded-xl border border-black/[0.08] bg-black/[0.015] p-5 transition-colors outline-none hover:border-black/20 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-white/15"
+      className="group flex h-full flex-col gap-5 rounded-xl border border-black/[0.08] bg-black/[0.015] p-5 transition-colors outline-none hover:border-black/20 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-white/15"
     >
-      <div className="min-w-0">
+      <div className="relative min-w-0 pr-6">
+        <ArrowUpRightIcon className="absolute top-0.5 right-0 size-4 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
         <h2 className="truncate text-base font-medium text-zinc-900 dark:text-zinc-100">
           {team.name}
         </h2>

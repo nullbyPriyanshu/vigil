@@ -16,11 +16,8 @@ export class DemoService {
   constructor(private readonly prisma: PrismaService) {}
 
   async seed(userId: string, organizationId: string) {
-    if (
-      process.env.NODE_ENV === 'production' &&
-      process.env.ALLOW_DEMO_SEED !== 'true'
-    ) {
-      throw new ForbiddenException('Demo data is turned off here');
+    if (process.env.ALLOW_DEMO_SEED !== 'true') {
+      throw new ForbiddenException('Demo data is turned off');
     }
 
     const membership = await this.prisma.membership.findUnique({

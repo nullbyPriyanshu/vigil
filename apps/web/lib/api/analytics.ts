@@ -38,14 +38,3 @@ export const getAnalyticsByServiceApi = (days: AnalyticsDays = 30) =>
   api.get<{ data: ServiceStats[] }>("/analytics/by-service", {
     params: { days },
   });
-
-export type DemoSeedResult = {
-  teams: number;
-  services: number;
-  schedules: number;
-  escalationPolicies: number;
-  incidents: number;
-};
-
-// Owner only, and only while the organization is still empty.
-export const seedDemoDataApi = () => api.post<DemoSeedResult>("/demo/seed");

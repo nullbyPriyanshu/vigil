@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClockIcon, PlusIcon } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  CalendarClockIcon,
+  PlusIcon,
+} from "lucide-react";
 
 import { ScheduleFormDialog } from "@/components/schedules/schedule-form-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -31,6 +35,7 @@ export default function SchedulesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={CalendarClockIcon}
         title="Schedules"
         description="Rotations that answer one question: who is on call right now?"
         action={
@@ -82,9 +87,10 @@ function ScheduleCard({ schedule }: { schedule: ScheduleSummary }) {
   return (
     <Link
       href={`/schedules/${schedule.id}`}
-      className="flex h-full flex-col gap-5 rounded-xl border border-black/[0.08] bg-black/[0.015] p-5 transition-colors outline-none hover:border-black/20 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-white/15"
+      className="group flex h-full flex-col gap-5 rounded-xl border border-black/[0.08] bg-black/[0.015] p-5 transition-colors outline-none hover:border-black/20 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-white/15"
     >
-      <div className="min-w-0">
+      <div className="relative min-w-0 pr-6">
+        <ArrowUpRightIcon className="absolute top-0.5 right-0 size-4 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
         <h2 className="truncate text-base font-medium text-zinc-900 dark:text-zinc-100">
           {schedule.name}
         </h2>

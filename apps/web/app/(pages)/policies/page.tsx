@@ -34,6 +34,7 @@ export default function PoliciesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={WorkflowIcon}
         title="Escalation Policies"
         description="Who gets notified about an incident, in what order, and how long to wait before moving on."
         action={
@@ -69,6 +70,9 @@ export default function PoliciesPage() {
                   href={`/policies/${policy.id}`}
                   className="flex items-center gap-4 px-(--card-spacing) py-3.5 transition-colors outline-none hover:bg-black/[0.02] focus-visible:bg-black/[0.03] dark:hover:bg-white/[0.02] dark:focus-visible:bg-white/[0.03]"
                 >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-black/[0.08] text-xs font-semibold text-foreground tabular-nums dark:border-white/[0.08]">
+                    {policy.stepCount}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
                       {policy.name}
@@ -78,7 +82,13 @@ export default function PoliciesPage() {
                       {formatRepeat(policy.repeatCount)}
                     </p>
                   </div>
-                  <span className="hidden shrink-0 text-sm text-muted-foreground sm:block">
+                  <span
+                    className={
+                      policy.serviceCount === 0
+                        ? "hidden shrink-0 text-xs text-muted-foreground sm:block"
+                        : "hidden shrink-0 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 sm:block dark:text-emerald-400"
+                    }
+                  >
                     {policy.serviceCount === 0
                       ? "Not used yet"
                       : `Used by ${plural(policy.serviceCount, "service")}`}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ArrowDownIcon, ArrowUpIcon, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function StatCard({
   tone = "neutral",
   trend,
   target,
+  footer,
 }: {
   label: string;
   value: string | number;
@@ -32,6 +34,8 @@ export function StatCard({
   // Only meaningful for time-based stats (MTTA/MTTR): shows a small
   // under-/over-target indicator below the label.
   target?: { actualSeconds: number; targetSeconds: number };
+  // Something small under the number: a sparkline, a progress bar.
+  footer?: ReactNode;
 }) {
   const underTarget = target ? target.actualSeconds <= target.targetSeconds : null;
   const improved = trend !== undefined && trend <= 0;
@@ -93,6 +97,7 @@ export function StatCard({
             </p>
           )}
         </div>
+        {footer && <div className="mt-4">{footer}</div>}
       </CardContent>
     </Card>
   );

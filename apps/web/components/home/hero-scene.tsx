@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { ParallaxLayer } from "@/components/home/parallax-layer";
 import { addLayer, ease, prefersReducedMotion, wake } from "@/components/home/scroll-engine";
-import { WorldMapBackdrop } from "@/components/home/world-map-backdrop";
 import { cn } from "@/lib/utils";
 
 // Each chip sits at its own depth: how far it shifts on scroll, how far it
@@ -49,8 +48,8 @@ const CHIPS = [
 // tracking.
 const POINTER_EASE = 0.018;
 
-// The right half of the hero: the live network map, held still, with three
-// example events floating over it. Each chip drifts on its own slow loop,
+// The right half of the hero: three example events floating over the map
+// (which the page draws full-width behind the whole hero). Each chip drifts on its own slow loop,
 // shifts at its own speed as you scroll, and trails a few pixels after the
 // mouse.
 export function HeroScene() {
@@ -92,13 +91,6 @@ export function HeroScene() {
       className="relative hidden min-h-[480px] lg:block"
       style={{ "--mx": 0, "--my": 0 } as React.CSSProperties}
     >
-      {/* The map itself never moves; only the chips above it do. It's wider
-          than its column on purpose, so it's large and runs off the right
-          edge of the page. */}
-      <div className="absolute -top-10 -right-[38%] -bottom-6 -left-[14%]">
-        <WorldMapBackdrop emphasis={2.4} />
-      </div>
-
       {CHIPS.map((chip) => (
         <ParallaxLayer
           key={chip.title}

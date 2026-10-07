@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
-import { seedDemoDataApi } from "@/lib/api/analytics";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import { createInvitationApi } from "@/lib/api/invitations";
 import {
@@ -73,20 +72,6 @@ export default function OnboardingPage() {
       queryClient.invalidateQueries();
       router.push("/dashboard");
     },
-  });
-
-  const loadDemo = useMutation({
-    mutationFn: async () => {
-      await seedDemoDataApi();
-      await completeOnboardingApi();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      toast.success("Demo data loaded");
-      router.push("/dashboard");
-    },
-    onError: (err) =>
-      setError(getApiErrorMessage(err, "Couldn't load the demo data.")),
   });
 
   const next = useMutation({
@@ -188,7 +173,7 @@ export default function OnboardingPage() {
   }
 
   const firstName = session.user.name.split(" ")[0];
-  const busy = next.isPending || finish.isPending || loadDemo.isPending;
+  const busy = next.isPending || finish.isPending;
   const sent = incidentNumber !== null;
 
   return (
@@ -408,19 +393,6 @@ export default function OnboardingPage() {
             >
               Skip setup
             </button>
-            {step === 0 && session.role === "OWNER" && (
-              <>
-                {" · "}
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => loadDemo.mutate()}
-                  className="underline underline-offset-4 outline-none hover:text-foreground focus-visible:text-foreground"
-                >
-                  {loadDemo.isPending ? "Loading demo data…" : "Load demo data instead"}
-                </button>
-              </>
-            )}
           </p>
         )}
       </div>

@@ -116,6 +116,7 @@ function Incidents() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        icon={SirenIcon}
         title="Incidents"
         description="Every problem your services have reported, newest first."
         action={<LiveBadge />}

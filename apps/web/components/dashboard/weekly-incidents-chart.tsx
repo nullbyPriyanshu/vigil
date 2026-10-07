@@ -35,10 +35,12 @@ export function WeeklyIncidentsChart({
   data,
   title = "Incident activity",
   className,
+  footer,
 }: {
   data: DayCount[];
   title?: string;
   className?: string;
+  footer?: React.ReactNode;
 }) {
   const top = axisMax(Math.max(...data.map((d) => d.count), 1));
   const total = data.reduce((sum, d) => sum + d.count, 0);
@@ -170,6 +172,7 @@ export function WeeklyIncidentsChart({
             </div>
           </div>
         </div>
+        {footer}
       </CardContent>
     </Card>
   );
