@@ -76,7 +76,7 @@ export class AlertsController {
     const result = await this.alertsService.createAlert(
       req.apiKey,
       dto,
-      payload,
+      payload,c
       idempotencyKey,
     );
 

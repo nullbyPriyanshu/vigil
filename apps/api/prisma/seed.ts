@@ -6,13 +6,15 @@ import { Prisma, PrismaClient } from '../src/generated/prisma/client';
 import { getFirstHandoff } from '../src/schedules/onCall';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL as string }),
+  adapter: new PrismaPg({
+    connectionString: process.env.DATABASE_URL as string,
+  }),
 });
 
 const ORG_NAME = 'Vigil';
 const ORG_SLUG = 'vigil';
-const OWNER_EMAIL = 'pmaurya.dev@gmail.com';
-const PASSWORD = 'Vigil@12345';
+const OWNER_EMAIL = process.env.SEED_OWNER_EMAIL as string;
+const PASSWORD = process.env.SEED_PASSWORD as string;
 const TIMEZONE = 'Asia/Kolkata';
 
 const MINUTE = 60 * 1000;
@@ -36,41 +38,167 @@ function emailFor(key: string) {
 }
 
 const TEAMS = [
-  { name: 'Platform Team', slug: 'platform-team', members: ['priyanshu', 'rahul', 'sneha', 'amit'] },
-  { name: 'Payments Team', slug: 'payments-team', members: ['rahul', 'maya', 'daniel'] },
-  { name: 'Infrastructure', slug: 'infrastructure', members: ['priyanshu', 'amit', 'daniel', 'zara'] },
+  {
+    name: 'Platform Team',
+    slug: 'platform-team',
+    members: ['priyanshu', 'rahul', 'sneha', 'amit'],
+  },
+  {
+    name: 'Payments Team',
+    slug: 'payments-team',
+    members: ['rahul', 'maya', 'daniel'],
+  },
+  {
+    name: 'Infrastructure',
+    slug: 'infrastructure',
+    members: ['priyanshu', 'amit', 'daniel', 'zara'],
+  },
 ];
 
 const SERVICES = [
-  { name: 'Checkout API', description: 'Cart, orders and the checkout page', team: 'Platform Team', policy: 'Platform Critical', autoResolveMinutes: null },
-  { name: 'Auth Service', description: 'Login, signup and sessions', team: 'Platform Team', policy: 'Platform Critical', autoResolveMinutes: null },
-  { name: 'Search API', description: 'Product search and suggestions', team: 'Platform Team', policy: 'Platform Critical', autoResolveMinutes: 60 },
-  { name: 'Payments API', description: 'Card payments, refunds and payouts', team: 'Payments Team', policy: 'Payments Standard', autoResolveMinutes: null },
-  { name: 'Billing Worker', description: 'Invoices and subscription renewals', team: 'Payments Team', policy: 'Payments Standard', autoResolveMinutes: 120 },
-  { name: 'Postgres Primary', description: 'The main database cluster', team: 'Infrastructure', policy: 'Infrastructure Default', autoResolveMinutes: null },
-  { name: 'CDN Edge', description: 'Static assets and image delivery', team: 'Infrastructure', policy: 'Infrastructure Default', autoResolveMinutes: 30 },
+  {
+    name: 'Checkout API',
+    description: 'Cart, orders and the checkout page',
+    team: 'Platform Team',
+    policy: 'Platform Critical',
+    autoResolveMinutes: null,
+  },
+  {
+    name: 'Auth Service',
+    description: 'Login, signup and sessions',
+    team: 'Platform Team',
+    policy: 'Platform Critical',
+    autoResolveMinutes: null,
+  },
+  {
+    name: 'Search API',
+    description: 'Product search and suggestions',
+    team: 'Platform Team',
+    policy: 'Platform Critical',
+    autoResolveMinutes: 60,
+  },
+  {
+    name: 'Payments API',
+    description: 'Card payments, refunds and payouts',
+    team: 'Payments Team',
+    policy: 'Payments Standard',
+    autoResolveMinutes: null,
+  },
+  {
+    name: 'Billing Worker',
+    description: 'Invoices and subscription renewals',
+    team: 'Payments Team',
+    policy: 'Payments Standard',
+    autoResolveMinutes: 120,
+  },
+  {
+    name: 'Postgres Primary',
+    description: 'The main database cluster',
+    team: 'Infrastructure',
+    policy: 'Infrastructure Default',
+    autoResolveMinutes: null,
+  },
+  {
+    name: 'CDN Edge',
+    description: 'Static assets and image delivery',
+    team: 'Infrastructure',
+    policy: 'Infrastructure Default',
+    autoResolveMinutes: 30,
+  },
 ];
 
 const PROBLEMS = [
-  { title: 'Database connection pool exhausted', service: 'Checkout API', severity: 'CRITICAL' },
-  { title: 'Elevated 5xx rate on /api/orders', service: 'Checkout API', severity: 'HIGH' },
-  { title: 'Cart service memory climbing', service: 'Checkout API', severity: 'LOW' },
-  { title: 'Checkout page error rate above 5%', service: 'Checkout API', severity: 'CRITICAL' },
-  { title: 'Login latency above 2s', service: 'Auth Service', severity: 'HIGH' },
-  { title: 'Token refresh failures', service: 'Auth Service', severity: 'CRITICAL' },
-  { title: 'Password reset emails delayed', service: 'Auth Service', severity: 'LOW' },
-  { title: 'Search results timing out', service: 'Search API', severity: 'HIGH' },
+  {
+    title: 'Database connection pool exhausted',
+    service: 'Checkout API',
+    severity: 'CRITICAL',
+  },
+  {
+    title: 'Elevated 5xx rate on /api/orders',
+    service: 'Checkout API',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Cart service memory climbing',
+    service: 'Checkout API',
+    severity: 'LOW',
+  },
+  {
+    title: 'Checkout page error rate above 5%',
+    service: 'Checkout API',
+    severity: 'CRITICAL',
+  },
+  {
+    title: 'Login latency above 2s',
+    service: 'Auth Service',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Token refresh failures',
+    service: 'Auth Service',
+    severity: 'CRITICAL',
+  },
+  {
+    title: 'Password reset emails delayed',
+    service: 'Auth Service',
+    severity: 'LOW',
+  },
+  {
+    title: 'Search results timing out',
+    service: 'Search API',
+    severity: 'HIGH',
+  },
   { title: 'Search index is stale', service: 'Search API', severity: 'LOW' },
-  { title: 'Payment webhook timeout', service: 'Payments API', severity: 'HIGH' },
-  { title: 'Card processor returning 503', service: 'Payments API', severity: 'CRITICAL' },
-  { title: 'Duplicate charge reports', service: 'Payments API', severity: 'CRITICAL' },
-  { title: 'Refund queue backlog', service: 'Billing Worker', severity: 'HIGH' },
-  { title: 'Invoice generation job failed', service: 'Billing Worker', severity: 'LOW' },
-  { title: 'Replication lag above 30s', service: 'Postgres Primary', severity: 'HIGH' },
-  { title: 'Disk usage above 85%', service: 'Postgres Primary', severity: 'HIGH' },
-  { title: 'Slow queries on orders table', service: 'Postgres Primary', severity: 'LOW' },
-  { title: 'Cache hit rate dropped below 60%', service: 'CDN Edge', severity: 'LOW' },
-  { title: 'Certificate expires in 7 days', service: 'CDN Edge', severity: 'LOW' },
+  {
+    title: 'Payment webhook timeout',
+    service: 'Payments API',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Card processor returning 503',
+    service: 'Payments API',
+    severity: 'CRITICAL',
+  },
+  {
+    title: 'Duplicate charge reports',
+    service: 'Payments API',
+    severity: 'CRITICAL',
+  },
+  {
+    title: 'Refund queue backlog',
+    service: 'Billing Worker',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Invoice generation job failed',
+    service: 'Billing Worker',
+    severity: 'LOW',
+  },
+  {
+    title: 'Replication lag above 30s',
+    service: 'Postgres Primary',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Disk usage above 85%',
+    service: 'Postgres Primary',
+    severity: 'HIGH',
+  },
+  {
+    title: 'Slow queries on orders table',
+    service: 'Postgres Primary',
+    severity: 'LOW',
+  },
+  {
+    title: 'Cache hit rate dropped below 60%',
+    service: 'CDN Edge',
+    severity: 'LOW',
+  },
+  {
+    title: 'Certificate expires in 7 days',
+    service: 'CDN Edge',
+    severity: 'LOW',
+  },
 ] as const;
 
 const COMMENTS = [
@@ -108,6 +236,12 @@ async function removeOldSeed() {
 }
 
 async function main() {
+  if (!OWNER_EMAIL || !PASSWORD) {
+    throw new Error(
+      'Set SEED_OWNER_EMAIL and SEED_PASSWORD in apps/api/.env before seeding',
+    );
+  }
+
   await removeOldSeed();
 
   const now = Date.now();
@@ -173,7 +307,9 @@ async function main() {
         name: team.name,
         slug: team.slug,
         organizationId,
-        members: { create: team.members.map((key) => ({ userId: users[key].id })) },
+        members: {
+          create: team.members.map((key) => ({ userId: users[key].id })),
+        },
       },
     });
     teams[team.name] = created.id;
@@ -192,10 +328,12 @@ async function main() {
       organizationId,
       teamId: teams['Platform Team'],
       participants: {
-        create: ['priyanshu', 'rahul', 'sneha', 'amit'].map((key, position) => ({
-          userId: users[key].id,
-          position,
-        })),
+        create: ['priyanshu', 'rahul', 'sneha', 'amit'].map(
+          (key, position) => ({
+            userId: users[key].id,
+            position,
+          }),
+        ),
       },
     },
   });
@@ -206,7 +344,13 @@ async function main() {
       rotationType: 'DAILY',
       handoffDay: null,
       handoffTime: '09:00',
-      startDate: getFirstHandoff(startDate, '09:00', 'Europe/London', 'DAILY', null),
+      startDate: getFirstHandoff(
+        startDate,
+        '09:00',
+        'Europe/London',
+        'DAILY',
+        null,
+      ),
       organizationId,
       teamId: teams['Payments Team'],
       participants: {
@@ -224,7 +368,13 @@ async function main() {
       rotationType: 'WEEKLY',
       handoffDay: 5,
       handoffTime: '17:00',
-      startDate: getFirstHandoff(startDate, '17:00', 'America/New_York', 'WEEKLY', 5),
+      startDate: getFirstHandoff(
+        startDate,
+        '17:00',
+        'America/New_York',
+        'WEEKLY',
+        5,
+      ),
       organizationId,
       teamId: teams['Infrastructure'],
       participants: {
@@ -236,7 +386,10 @@ async function main() {
     },
   });
 
-  const policies: Record<string, { id: string; steps: number; responders: string[] }> = {};
+  const policies: Record<
+    string,
+    { id: string; steps: number; responders: string[] }
+  > = {};
 
   const platformPolicy = await prisma.escalationPolicy.create({
     data: {
@@ -245,14 +398,33 @@ async function main() {
       organizationId,
       steps: {
         create: [
-          { position: 1, delayMinutes: 5, targetType: 'SCHEDULE', scheduleId: platformWeekly.id },
-          { position: 2, delayMinutes: 10, targetType: 'USER', userId: users.rahul.id },
-          { position: 3, delayMinutes: 15, targetType: 'TEAM', teamId: teams['Platform Team'] },
+          {
+            position: 1,
+            delayMinutes: 5,
+            targetType: 'SCHEDULE',
+            scheduleId: platformWeekly.id,
+          },
+          {
+            position: 2,
+            delayMinutes: 10,
+            targetType: 'USER',
+            userId: users.rahul.id,
+          },
+          {
+            position: 3,
+            delayMinutes: 15,
+            targetType: 'TEAM',
+            teamId: teams['Platform Team'],
+          },
         ],
       },
     },
   });
-  policies['Platform Critical'] = { id: platformPolicy.id, steps: 3, responders: ['priyanshu', 'rahul', 'sneha', 'amit'] };
+  policies['Platform Critical'] = {
+    id: platformPolicy.id,
+    steps: 3,
+    responders: ['priyanshu', 'rahul', 'sneha', 'amit'],
+  };
 
   const paymentsPolicy = await prisma.escalationPolicy.create({
     data: {
@@ -261,13 +433,27 @@ async function main() {
       organizationId,
       steps: {
         create: [
-          { position: 1, delayMinutes: 10, targetType: 'SCHEDULE', scheduleId: paymentsDaily.id },
-          { position: 2, delayMinutes: 20, targetType: 'TEAM', teamId: teams['Payments Team'] },
+          {
+            position: 1,
+            delayMinutes: 10,
+            targetType: 'SCHEDULE',
+            scheduleId: paymentsDaily.id,
+          },
+          {
+            position: 2,
+            delayMinutes: 20,
+            targetType: 'TEAM',
+            teamId: teams['Payments Team'],
+          },
         ],
       },
     },
   });
-  policies['Payments Standard'] = { id: paymentsPolicy.id, steps: 2, responders: ['maya', 'daniel', 'rahul'] };
+  policies['Payments Standard'] = {
+    id: paymentsPolicy.id,
+    steps: 2,
+    responders: ['maya', 'daniel', 'rahul'],
+  };
 
   const infraPolicy = await prisma.escalationPolicy.create({
     data: {
@@ -276,13 +462,27 @@ async function main() {
       organizationId,
       steps: {
         create: [
-          { position: 1, delayMinutes: 15, targetType: 'SCHEDULE', scheduleId: infraWeekly.id },
-          { position: 2, delayMinutes: 30, targetType: 'USER', userId: users.priyanshu.id },
+          {
+            position: 1,
+            delayMinutes: 15,
+            targetType: 'SCHEDULE',
+            scheduleId: infraWeekly.id,
+          },
+          {
+            position: 2,
+            delayMinutes: 30,
+            targetType: 'USER',
+            userId: users.priyanshu.id,
+          },
         ],
       },
     },
   });
-  policies['Infrastructure Default'] = { id: infraPolicy.id, steps: 2, responders: ['amit', 'daniel', 'priyanshu'] };
+  policies['Infrastructure Default'] = {
+    id: infraPolicy.id,
+    steps: 2,
+    responders: ['amit', 'daniel', 'priyanshu'],
+  };
 
   const services: Record<string, { id: string; policy: string }> = {};
   const apiKeys: { service: string; key: string }[] = [];
@@ -345,12 +545,16 @@ async function main() {
 
     const fromEnd = INCIDENT_COUNT - 1 - i;
     const isTriggered = fromEnd < OPEN_TRIGGERED;
-    const isAcknowledged = !isTriggered && fromEnd < OPEN_TRIGGERED + OPEN_ACKNOWLEDGED;
+    const isAcknowledged =
+      !isTriggered && fromEnd < OPEN_TRIGGERED + OPEN_ACKNOWLEDGED;
 
     const closedCount = INCIDENT_COUNT - OPEN_TRIGGERED - OPEN_ACKNOWLEDGED;
     const age = Math.pow((closedCount - 1 - i) / (closedCount - 1), 1.7);
-    let createdAt = new Date(now - (0.3 + 87 * age) * DAY - ((i * 137) % 400) * MINUTE);
-    if (isAcknowledged) createdAt = new Date(now - (50 + fromEnd * 25) * MINUTE);
+    let createdAt = new Date(
+      now - (0.3 + 87 * age) * DAY - ((i * 137) % 400) * MINUTE,
+    );
+    if (isAcknowledged)
+      createdAt = new Date(now - (50 + fromEnd * 25) * MINUTE);
     if (isTriggered) createdAt = new Date(now - (4 + fromEnd * 9) * MINUTE);
 
     const escalated = i % 5 === 0 && !isTriggered;
@@ -399,9 +603,15 @@ async function main() {
         status,
         dedupKey,
         createdAt,
-        lastAlertAt: new Date(createdAt.getTime() + (alertCount - 1) * 2 * MINUTE),
+        lastAlertAt: new Date(
+          createdAt.getTime() + (alertCount - 1) * 2 * MINUTE,
+        ),
         acknowledgedAt,
-        acknowledgedById: acknowledgedAt ? (escalated ? resolver.id : firstResponder.id) : null,
+        acknowledgedById: acknowledgedAt
+          ? escalated
+            ? resolver.id
+            : firstResponder.id
+          : null,
         resolvedAt,
         resolvedById: resolvedAt ? resolver.id : null,
         currentStepPosition: escalated ? 2 : 1,
@@ -423,17 +633,33 @@ async function main() {
     notificationCount++;
 
     const events = [
-      { type: 'CREATED', actorType: 'INTEGRATION', actorId: null, message: 'Incident created from alert', createdAt },
+      {
+        type: 'CREATED',
+        actorType: 'INTEGRATION',
+        actorId: null,
+        message: 'Incident created from alert',
+        createdAt,
+      },
       {
         type: 'NOTIFICATION_SENT',
         actorType: 'SYSTEM',
         actorId: null,
         message: `Email sent to ${firstResponder.name}`,
         createdAt: new Date(createdAt.getTime() + 2000),
-        metadata: { notificationId: firstNotification.id, status: firstNotification.status },
+        metadata: {
+          notificationId: firstNotification.id,
+          status: firstNotification.status,
+        },
       },
     ] as {
-      type: 'CREATED' | 'NOTIFICATION_SENT' | 'NOTIFICATION_DELIVERED' | 'ESCALATED' | 'ACKNOWLEDGED' | 'COMMENT' | 'RESOLVED';
+      type:
+        | 'CREATED'
+        | 'NOTIFICATION_SENT'
+        | 'NOTIFICATION_DELIVERED'
+        | 'ESCALATED'
+        | 'ACKNOWLEDGED'
+        | 'COMMENT'
+        | 'RESOLVED';
       actorType: 'INTEGRATION' | 'SYSTEM' | 'USER';
       actorId: string | null;
       message: string;
@@ -464,8 +690,20 @@ async function main() {
       });
       notificationCount++;
       events.push(
-        { type: 'ESCALATED', actorType: 'SYSTEM', actorId: null, message: 'Nobody responded. Escalated to step 2', createdAt: escalatedAt },
-        { type: 'NOTIFICATION_SENT', actorType: 'SYSTEM', actorId: null, message: `Email sent to ${resolver.name}`, createdAt: new Date(escalatedAt.getTime() + 2000) },
+        {
+          type: 'ESCALATED',
+          actorType: 'SYSTEM',
+          actorId: null,
+          message: 'Nobody responded. Escalated to step 2',
+          createdAt: escalatedAt,
+        },
+        {
+          type: 'NOTIFICATION_SENT',
+          actorType: 'SYSTEM',
+          actorId: null,
+          message: `Email sent to ${resolver.name}`,
+          createdAt: new Date(escalatedAt.getTime() + 2000),
+        },
       );
     }
 
@@ -511,15 +749,21 @@ async function main() {
 
   console.log('');
   console.log(`Seeded "${ORG_NAME}"`);
-  console.log(`  ${PEOPLE.length} people, ${TEAMS.length} teams, 3 schedules, 3 escalation policies`);
-  console.log(`  ${SERVICES.length} services, ${INCIDENT_COUNT} incidents, ${notificationCount} notifications`);
+  console.log(
+    `  ${PEOPLE.length} people, ${TEAMS.length} teams, 3 schedules, 3 escalation policies`,
+  );
+  console.log(
+    `  ${SERVICES.length} services, ${INCIDENT_COUNT} incidents, ${notificationCount} notifications`,
+  );
   console.log('');
-  console.log('Log in with any of these (same password for all; an owner account that');
+  console.log(
+    'Log in with any of these (same password for all; an owner account that',
+  );
   console.log('already existed keeps the password it had):');
   for (const person of PEOPLE) {
     console.log(`  ${person.role.padEnd(9)} ${emailFor(person.key)}`);
   }
-  console.log(`  password  ${PASSWORD}`);
+  console.log('  password  the SEED_PASSWORD from your .env');
   console.log('');
   console.log('API keys (shown only here):');
   for (const apiKey of apiKeys) {

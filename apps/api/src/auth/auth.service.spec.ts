@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import { RedisService } from '../redis/redis.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma.service';
 import { AuthService } from './auth.service';
@@ -18,6 +19,7 @@ const hashToken = (token: string) =>
 // Jest (CommonJS) can't load. We don't need the real ones here, so swap in
 // tiny fakes.
 jest.mock('../mail/mail.service', () => ({ MailService: class {} }));
+jest.mock('../redis/redis.service', () => ({ RedisService: class {} }));
 jest.mock('@nestjs/jwt', () => ({
   JwtService: class {
     signAsync(payload: object) {
@@ -60,6 +62,13 @@ function createPrismaMock() {
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: ReturnType<typeof createPrismaMock>;
+  let redis: {
+    get: jest.Mock;
+    incr: jest.Mock;
+    expire: jest.Mock;
+    ttl: jest.Mock;
+    del: jest.Mock;
+  };
   let mail: {
     sendForgotPasswordEmail: jest.Mock;
     sendPasswordResetSuccessEmail: jest.Mock;
@@ -67,6 +76,13 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     prisma = createPrismaMock();
+    redis = {
+      get: jest.fn().mockResolvedValue(null),
+      incr: jest.fn().mockResolvedValue(1),
+      expire: jest.fn(),
+      ttl: jest.fn().mockResolvedValue(600),
+      del: jest.fn(),
+    };
     mail = {
       sendForgotPasswordEmail: jest.fn(),
       sendPasswordResetSuccessEmail: jest.fn(),
@@ -77,6 +93,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: MailService, useValue: mail },
+        { provide: RedisService, useValue: redis },
         JwtService,
       ],
     }).compile();
@@ -125,6 +142,38 @@ describe('AuthService', () => {
         passwordHash: await bcrypt.hash(password, 4),
         memberships: [{ organizationId: 'o1', role: 'OWNER' }],
       };
+    });
+
+    it('counts a wrong password and starts the 15 minute window', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      await expect(
+        service.login({ email: 'a@b.com', password: 'wrong' }),
+      ).rejects.toThrow('Invalid email or password');
+
+      expect(redis.incr).toHaveBeenCalledWith('login-fails:a@b.com');
+      expect(redis.expire).toHaveBeenCalledWith('login-fails:a@b.com', 900);
+    });
+
+    it('refuses even the right password after 5 wrong ones', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+      redis.get.mockResolvedValue('5');
+
+      await expect(
+        service.login({ email: 'a@b.com', password }),
+      ).rejects.toMatchObject({
+        status: 429,
+        message: 'Too many wrong passwords. Try again in 10 minutes',
+      });
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('forgets the wrong passwords after a correct one', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      await service.login({ email: 'a@b.com', password });
+
+      expect(redis.del).toHaveBeenCalledWith('login-fails:a@b.com');
     });
 
     it('returns different access and refresh tokens', async () => {
