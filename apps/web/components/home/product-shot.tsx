@@ -6,7 +6,7 @@ import { addLayer, clamp01, ease, prefersReducedMotion } from "@/components/home
 import { cn } from "@/lib/utils";
 
 export const SHOT_FRAME =
-  "overflow-hidden rounded-xl border border-black/10 bg-white shadow-[0_40px_80px_-30px_rgba(0,0,0,0.3)] sm:rounded-2xl dark:border-white/10 dark:bg-[#09090b] dark:shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]";
+  "overflow-hidden rounded-xl border border-black/10 bg-white shadow-[0_40px_80px_-30px_rgba(0,0,0,0.3)] sm:rounded-2xl dark:border-white/10 dark:bg-[#050505] dark:shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]";
 
 // A real screenshot of the app. Two files, one per theme, swapped with CSS
 // so the picture always matches the page around it. `unoptimized` serves

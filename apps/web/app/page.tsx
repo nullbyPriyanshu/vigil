@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { HeroActions } from "@/components/home/hero-actions";
 import { LandingNavbar } from "@/components/home/landing-navbar";
-import { HeroScene } from "@/components/home/hero-scene";
-import { WorldMapBackdrop } from "@/components/home/world-map-backdrop";
+import { ParticleLogo } from "@/components/home/particle-logo";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { ProductShot } from "@/components/home/product-shot";
 import { ProductStage } from "@/components/home/product-stage";
@@ -70,67 +69,48 @@ const BORDER = "border-black/[0.06] dark:border-white/[0.06]";
 
 export default function Home() {
   return (
-    <div className="relative bg-white text-foreground transition-colors duration-300 dark:bg-[#09090b]">
+    <div className="relative bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
       <LandingNavbar />
 
       <main>
         {/* ---------- Hero ---------- */}
         <section className="relative overflow-hidden">
-          {/* The map runs the full width of the page. A mask leaves it at
-              20% strength where the headline sits, so the text stays easy
-              to read, and lets it come up to full on the right. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-20 lg:opacity-100 lg:[mask-image:linear-gradient(to_right,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.2)_42%,black_64%)]"
-          >
-            <WorldMapBackdrop emphasis={2.4} />
-          </div>
+          <div className="animate-card-in mx-auto flex max-w-5xl flex-col items-center px-4 pt-14 pb-16 text-center sm:px-6 sm:pt-20 lg:pb-24">
+            <p className="text-[11px] font-medium tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400">
+              Vigil · On-call and incident response
+            </p>
 
-          <div className="relative mx-auto grid max-w-7xl gap-x-8 px-4 pt-14 pb-12 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pt-24 lg:pb-16">
-            <div className="animate-card-in">
-              <p className="inline-flex items-center gap-2.5 rounded-full border border-black/10 px-3.5 py-1.5 text-[11px] font-medium tracking-[0.18em] text-zinc-600 uppercase dark:border-white/10 dark:text-zinc-400">
-                <span aria-hidden className="size-1.5 rounded-full bg-emerald-500" />
-                Real-time incident management
-              </p>
+            <ParticleLogo className="mt-6 w-[min(21rem,72vw)]" />
 
-              <h1 className="mt-7 text-5xl leading-[1.04] font-semibold tracking-tight text-zinc-950 sm:text-6xl xl:text-7xl dark:text-white">
-                On-call, without
-                <span className="block text-emerald-600 dark:text-emerald-400">
-                  the chaos.
-                </span>
-              </h1>
+            <h1 className="mt-4 text-5xl leading-[0.95] font-semibold text-balance text-zinc-950 sm:text-6xl lg:text-[4.75rem] dark:text-zinc-100">
+              On-call, without the chaos.
+            </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-zinc-600 dark:text-zinc-400">
-                Vigil keeps your team ready. See who&apos;s on call, manage
-                alerts, and resolve incidents faster, so you can focus on
-                building, not firefighting.
-              </p>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-zinc-600 sm:text-lg dark:text-zinc-400">
+              See who&apos;s on call, route every alert to the right person,
+              and resolve incidents faster.
+            </p>
 
-              <HeroActions
-                className="mt-9"
-                secondary={{ label: "See how it works", sectionId: "how-it-works" }}
-              />
+            <HeroActions
+              className="mt-9 justify-center"
+              secondary={{ label: "See how it works", sectionId: "how-it-works" }}
+            />
 
-              <ul className="mt-11 grid gap-5 sm:grid-cols-3">
-                {HIGHLIGHTS.map((item) => (
-                  <li key={item.title} className="flex items-center gap-3">
-                    <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg border", BORDER)}>
-                      <item.icon className="size-[18px] text-emerald-600 dark:text-emerald-400" />
+            <ul className={cn("mt-16 grid w-full gap-px overflow-hidden rounded-xl border text-left sm:grid-cols-3", BORDER)}>
+              {HIGHLIGHTS.map((item) => (
+                <li key={item.title} className="flex items-center gap-3 px-5 py-4">
+                  <item.icon className="size-[18px] shrink-0 text-zinc-500 dark:text-zinc-400" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {item.title}
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {item.title}
-                      </span>
-                      <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-                        {item.text}
-                      </span>
+                    <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                      {item.text}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <HeroScene />
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

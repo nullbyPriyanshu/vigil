@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 
 import { StatCard } from "@/components/dashboard/stat-card";
-import { WeeklyIncidentsChart } from "@/components/dashboard/weekly-incidents-chart";
+import { TargetBar } from "@/components/dashboard/target-bar";
+import { IncidentsChart } from "@/components/dashboard/incidents-chart";
 import { PageHeader } from "@/components/shared/page-header";
 import { LoadError } from "@/components/shared/load-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,6 +130,12 @@ export default function AnalyticsPage() {
                       targetSeconds: MTTA_TARGET_SECONDS,
                     }
               }
+              footer={
+                <TargetBar
+                  actualSeconds={summary.mttaSeconds}
+                  targetSeconds={MTTA_TARGET_SECONDS}
+                />
+              }
             />
             <StatCard
               label="Time to resolve"
@@ -142,6 +149,12 @@ export default function AnalyticsPage() {
                       targetSeconds: MTTR_TARGET_SECONDS,
                     }
               }
+              footer={
+                <TargetBar
+                  actualSeconds={summary.mttrSeconds}
+                  targetSeconds={MTTR_TARGET_SECONDS}
+                />
+              }
             />
             <StatCard
               label="Escalated past step 1"
@@ -150,7 +163,7 @@ export default function AnalyticsPage() {
             />
           </div>
 
-          <WeeklyIncidentsChart data={series} title="Incidents per day" />
+          <IncidentsChart data={series} />
 
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <Card>

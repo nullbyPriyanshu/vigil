@@ -212,7 +212,7 @@ export default function OnboardingPage() {
                   className={cn(
                     "flex size-6 items-center justify-center rounded-full text-xs font-medium",
                     index < step || (index === 3 && sent)
-                      ? "bg-emerald-500 text-zinc-950"
+                      ? "bg-emerald-500 text-(--brand-foreground)"
                       : index === step
                         ? "border border-emerald-500 text-foreground"
                         : "border border-black/15 text-muted-foreground dark:border-white/15",

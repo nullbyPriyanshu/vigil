@@ -86,13 +86,6 @@ export function StatCard({
                   : "text-amber-600 dark:text-amber-400",
               )}
             >
-              <span
-                aria-hidden
-                className={cn(
-                  "size-1.5 shrink-0 rounded-full",
-                  underTarget ? "bg-emerald-500" : "bg-amber-500",
-                )}
-              />
               {underTarget ? "under target" : "over target"}
             </p>
           )}

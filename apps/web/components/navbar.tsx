@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { VigilMark } from "@/components/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
 import { UserMenu } from "@/components/user-menu";
@@ -53,13 +53,13 @@ export function Navbar({ showAuth = true }: { showAuth?: boolean }) {
     // AppHeader, so the page's backdrop (e.g. the auth grid and cursor
     // light) never shows through the header strip. "relative z-10" keeps
     // it above the page's decorative background layers.
-    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#09090b]">
+    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#050505]">
       <Link
         href="/"
-        className="flex shrink-0 items-center gap-2 font-mono text-lg leading-none font-bold tracking-widest text-zinc-900 uppercase dark:text-zinc-100"
+        className="flex shrink-0 items-center gap-2 text-[15px] leading-none font-semibold tracking-[0.22em] text-zinc-900 uppercase dark:text-zinc-100"
       >
         {/* Decorative: the "Vigil" text next to it is the link's name. */}
-        <Image src="/logo-vigil.png" alt="" width={22} height={22} priority />
+        <VigilMark />
         Vigil
       </Link>
       <div className="flex shrink-0 items-center gap-2">

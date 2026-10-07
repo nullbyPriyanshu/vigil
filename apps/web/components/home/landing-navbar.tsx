@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { VigilMark } from "@/components/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
 import { smoothScrollToId } from "@/components/home/scroll-engine";
@@ -57,13 +57,13 @@ function NavbarAuth() {
 
 export function LandingNavbar() {
   return (
-    <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-[#09090b]">
+    <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-[#050505]">
       <div className="relative flex h-16 items-center justify-between gap-6 px-4 sm:px-6">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 font-mono text-lg leading-none font-bold tracking-widest text-zinc-900 uppercase dark:text-zinc-100"
+          className="flex shrink-0 items-center gap-2 text-[15px] leading-none font-semibold tracking-[0.22em] text-zinc-900 uppercase dark:text-zinc-100"
         >
-          <Image src="/logo-vigil.png" alt="" width={22} height={22} priority />
+          <VigilMark />
           Vigil
         </Link>
 

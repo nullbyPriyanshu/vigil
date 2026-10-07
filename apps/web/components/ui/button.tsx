@@ -12,7 +12,7 @@ const buttonVariants = cva(
         // reserved for the one primary action in a given piece of UI (e.g.
         // Acknowledge on a triggered incident). Not a general-purpose
         // "default" replacement.
-        brand: "bg-emerald-400 text-zinc-950 hover:bg-emerald-300",
+        brand: "bg-emerald-400 text-(--brand-foreground) hover:bg-emerald-300",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

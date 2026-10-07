@@ -261,10 +261,6 @@ export function LandingScrollScene({ hero }: { hero: ReactNode }) {
             className="flex items-center gap-2 rounded-full border whitespace-nowrap border-black/[0.06] bg-white/70 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-sm will-change-transform dark:border-white/[0.08] dark:bg-zinc-950/60"
             style={panelStyle("transit")}
           >
-            <span className="relative flex size-1.5">
-              <span className="absolute inline-flex size-full rounded-full bg-emerald-400/70 motion-safe:animate-ping" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            </span>
             Alert routed São Paulo → Noida
             <span className="hidden sm:inline">· on-call paged in 0.8s</span>
           </div>
@@ -307,8 +303,7 @@ export function LandingScrollScene({ hero }: { hero: ReactNode }) {
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-emerald-600 uppercase dark:text-emerald-400">
-      <span aria-hidden className="size-1.5 rounded-full bg-current" />
+    <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase dark:text-zinc-400">
       {children}
     </p>
   );

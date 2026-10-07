@@ -103,18 +103,12 @@ export function HeroScene() {
             }}
           >
             <div
-              className="animate-float flex items-center gap-3 rounded-xl border border-black/10 bg-white px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] dark:border-white/10 dark:bg-[#131316] dark:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.9)]"
+              className="animate-float flex items-center gap-3 rounded-xl border border-black/10 bg-white px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] dark:border-white/10 dark:bg-[#0e0e0e] dark:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.9)]"
               style={{
                 animationDuration: chip.bob,
                 animationDelay: chip.delay,
               }}
             >
-              <span
-                className={cn(
-                  "size-2 shrink-0 rounded-full",
-                  chip.tone === "emerald" ? "bg-emerald-500" : "bg-red-500",
-                )}
-              />
               <span>
                 <span className="block text-sm font-medium whitespace-nowrap text-zinc-900 dark:text-zinc-100">
                   {chip.title}

@@ -76,7 +76,7 @@ export function MemberPicker({
                   className={cn(
                     "flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
                     checked
-                      ? "border-emerald-500 bg-emerald-500 text-zinc-950"
+                      ? "border-emerald-500 bg-emerald-500 text-(--brand-foreground)"
                       : "border-black/25 dark:border-white/25",
                   )}
                 >

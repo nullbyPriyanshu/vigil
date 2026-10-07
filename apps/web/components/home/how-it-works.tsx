@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const CARD =
-  "rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] dark:border-white/[0.08] dark:bg-[#0f0f11] dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)]";
+  "rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] dark:border-white/[0.08] dark:bg-[#0a0a0a] dark:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)]";
 
 // Each step, with the small piece of the app that shows what it means.
 const STEPS: { title: string; text: string; card: ReactNode }[] = [
@@ -78,7 +78,7 @@ const STEPS: { title: string; text: string; card: ReactNode }[] = [
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             INC-142 timeline
           </p>
-          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
             Resolved in 17m
           </span>
         </div>
@@ -182,7 +182,7 @@ export function HowItWorks() {
             {/* The numbered marker: an outline that fills in when reached. */}
             <span
               aria-hidden
-              className="absolute top-0 left-0 flex size-10 items-center justify-center rounded-full border border-black/15 bg-white font-mono text-sm text-zinc-500 dark:border-white/15 dark:bg-[#09090b] dark:text-zinc-400"
+              className="absolute top-0 left-0 flex size-10 items-center justify-center rounded-full border border-black/15 bg-white font-mono text-sm text-zinc-500 dark:border-white/15 dark:bg-[#050505] dark:text-zinc-400"
             >
               <span
                 className="absolute inset-0 rounded-full bg-emerald-500"

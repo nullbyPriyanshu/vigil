@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: var(--font-space-grotesk);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,72 +49,99 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --brand: #0d0d0d;
+  --brand-foreground: #f7f7f8;
+  --background: #fafafa;
+  --foreground: #0d0d0d;
+  --card: #ffffff;
+  --card-foreground: #0d0d0d;
+  --popover: #ffffff;
+  --popover-foreground: #0d0d0d;
+  --primary: #0d0d0d;
+  --primary-foreground: #f7f7f8;
+  --secondary: #f1f0ee;
+  --secondary-foreground: #0d0d0d;
+  --muted: #f1f0ee;
+  --muted-foreground: #737373;
+  --accent: #f1f0ee;
+  --accent-foreground: #0d0d0d;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: rgb(0 0 0 / 9%);
+  --input: rgb(0 0 0 / 13%);
+  --ring: #a3a3a3;
+  --chart-1: #0d0d0d;
+  --chart-2: #525252;
+  --chart-3: #737373;
+  --chart-4: #a3a3a3;
+  --chart-5: #d4d4d4;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #fafafa;
+  --sidebar-foreground: #0d0d0d;
+  --sidebar-primary: #0d0d0d;
+  --sidebar-primary-foreground: #f7f7f8;
+  --sidebar-accent: #f1f0ee;
+  --sidebar-accent-foreground: #0d0d0d;
+  --sidebar-border: rgb(0 0 0 / 9%);
+  --sidebar-ring: #a3a3a3;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --brand: #f1f0ee;
+  --brand-foreground: #0d0d0d;
+  --background: #050505;
+  --foreground: #f1f0ee;
+  --card: #0b0b0b;
+  --card-foreground: #f1f0ee;
+  --popover: #0e0e0e;
+  --popover-foreground: #f1f0ee;
+  --primary: #f1f0ee;
+  --primary-foreground: #0d0d0d;
+  --secondary: #171717;
+  --secondary-foreground: #f1f0ee;
+  --muted: #141414;
+  --muted-foreground: #a3a3a3;
+  --accent: #171717;
+  --accent-foreground: #f1f0ee;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: rgb(255 255 255 / 9%);
+  --input: rgb(255 255 255 / 13%);
+  --ring: #737373;
+  --chart-1: #f1f0ee;
+  --chart-2: #a3a3a3;
+  --chart-3: #737373;
+  --chart-4: #525252;
+  --chart-5: #2e2e2e;
+  --sidebar: #050505;
+  --sidebar-foreground: #f1f0ee;
+  --sidebar-primary: #f1f0ee;
+  --sidebar-primary-foreground: #0d0d0d;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #f1f0ee;
+  --sidebar-border: rgb(255 255 255 / 9%);
+  --sidebar-ring: #737373;
+}
+
+/* The app has one accent, and it is the text colour itself (near-black in
+   light mode, off-white in dark). Components were written with Tailwind's
+   emerald and zinc scales, so those scales are pointed here instead of
+   editing every class name. */
+@theme inline {
+  --color-emerald-300: color-mix(in oklab, var(--brand) 85%, var(--background));
+  --color-emerald-400: var(--brand);
+  --color-emerald-500: var(--brand);
+  --color-emerald-600: var(--brand);
+  --color-emerald-700: var(--brand);
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f1f0ee;
+  --color-zinc-200: #e5e5e5;
+  --color-zinc-300: #d4d4d4;
+  --color-zinc-400: #a3a3a3;
+  --color-zinc-500: #7c7c7c;
+  --color-zinc-600: #525252;
+  --color-zinc-700: #3a3a3a;
+  --color-zinc-800: #1c1c1c;
+  --color-zinc-900: #0e0e0e;
+  --color-zinc-950: #050505;
 }
 
 @layer base {
@@ -126,7 +153,35 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    /* Phones: no grey flash on tap, and no text resizing on rotate. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
+  /* Scrolling a list to its end shouldn't start dragging the whole page. */
+  body {
+    overscroll-behavior-y: none;
+  }
+  h1 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.035em;
+  }
+}
+
+/* Each page inside the app eases in on navigation (see (pages)/template). */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-in {
+  animation: page-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-page-in { animation: none; }
 }
 
 @keyframes card-in {
@@ -235,4 +290,31 @@
   .animate-row-flash {
     animation: none;
   }
+}
+
+/* A line chart is uncovered from left to right when it appears, like a
+   curtain being pulled back, and the dot marking today fades in once the
+   line has reached it. The negative numbers leave room for the line's
+   thickness at the edges. */
+@keyframes chart-reveal {
+  from { clip-path: inset(-12px 100% -12px -12px); }
+  to   { clip-path: inset(-12px -12px -12px -12px); }
+}
+
+@keyframes chart-dot {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-chart-reveal {
+  animation: chart-reveal 1.4s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+.animate-chart-dot {
+  animation: chart-dot 0.3s ease-out 1.25s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-chart-reveal,
+  .animate-chart-dot { animation: none; }
 }

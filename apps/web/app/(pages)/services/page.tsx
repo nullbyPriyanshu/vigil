@@ -77,10 +77,10 @@ export default function ServicesPage() {
                 <TableHead className="h-10 px-(--card-spacing) text-xs font-medium text-muted-foreground">
                   Service
                 </TableHead>
-                <TableHead className="h-10 px-3 text-xs font-medium text-muted-foreground">
+                <TableHead className="hidden h-10 px-3 text-xs font-medium text-muted-foreground md:table-cell">
                   Team
                 </TableHead>
-                <TableHead className="h-10 px-3 text-xs font-medium text-muted-foreground">
+                <TableHead className="hidden h-10 px-3 text-xs font-medium text-muted-foreground md:table-cell">
                   Escalation policy
                 </TableHead>
                 <TableHead className="h-10 px-(--card-spacing) text-right text-xs font-medium text-muted-foreground">
@@ -91,7 +91,7 @@ export default function ServicesPage() {
             <TableBody>
               {services.map((service) => (
                 <TableRow key={service.id}>
-                  <TableCell className="max-w-72 px-(--card-spacing) py-3">
+                  <TableCell className="max-w-44 px-(--card-spacing) py-3 sm:max-w-72">
                     <Link
                       href={`/services/${service.id}`}
                       className="flex items-center gap-2.5 rounded-sm font-medium text-foreground outline-none hover:underline hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-emerald-400/60"
@@ -108,15 +108,15 @@ export default function ServicesPage() {
                       </p>
                     )}
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-zinc-700 dark:text-zinc-300">
+                  <TableCell className="hidden px-3 py-3 text-zinc-700 md:table-cell dark:text-zinc-300">
                     {service.team.name}
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-zinc-700 dark:text-zinc-300">
+                  <TableCell className="hidden px-3 py-3 text-zinc-700 md:table-cell dark:text-zinc-300">
                     {service.escalationPolicy.name}
                   </TableCell>
                   <TableCell className="px-(--card-spacing) py-3 text-right">
                     {service.openIncidentCount > 0 ? (
-                      <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 text-xs font-medium text-red-600 tabular-nums dark:text-red-400">
+                      <span className="text-xs font-medium text-red-600 tabular-nums dark:text-red-400">
                         {service.openIncidentCount} open
                       </span>
                     ) : (

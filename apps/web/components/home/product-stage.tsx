@@ -187,7 +187,6 @@ export function ProductStage() {
             className="top-[8%] lg:-right-3 xl:-right-[7%]"
           >
             <div className="flex items-center gap-3 rounded-xl border border-black/[0.08] px-4 py-3 dark:border-white/[0.08]">
-              <span className="size-2 shrink-0 rounded-full bg-amber-500" />
               <div>
                 <p className="text-sm font-medium whitespace-nowrap text-zinc-900 dark:text-zinc-100">
                   INC-140 acknowledged
@@ -226,7 +225,7 @@ export function ProductStage() {
                   Checkout API · 2m ago
                 </p>
               </div>
-              <span className="rounded-lg bg-emerald-400 px-2.5 py-1 text-xs font-medium text-zinc-950">
+              <span className="rounded-lg bg-emerald-400 px-2.5 py-1 text-xs font-medium text-(--brand-foreground)">
                 Acknowledge
               </span>
             </div>
@@ -260,7 +259,7 @@ function FloatingCard({
     <div
       aria-hidden
       className={cn(
-        "absolute hidden rounded-xl bg-white shadow-[0_24px_50px_-20px_rgba(0,0,0,0.35)] will-change-transform lg:block dark:bg-[#0f0f11] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,1)]",
+        "absolute hidden rounded-xl bg-white shadow-[0_24px_50px_-20px_rgba(0,0,0,0.35)] will-change-transform lg:block dark:bg-[#0a0a0a] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,1)]",
         className,
       )}
       style={{

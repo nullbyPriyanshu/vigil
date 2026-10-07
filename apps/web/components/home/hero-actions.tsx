@@ -27,7 +27,7 @@ export function HeroActions({
           href={session ? "/dashboard" : "/signup"}
           className={cn(
             buttonVariants({ variant: "brand" }),
-            "h-12 animate-in px-6 text-[15px] fade-in duration-500 motion-reduce:animate-none",
+            "h-12 animate-in rounded-full px-7 text-[15px] font-semibold fade-in duration-500 motion-reduce:animate-none",
           )}
         >
           {session ? "Go to dashboard" : "Get started"}
@@ -40,7 +40,7 @@ export function HeroActions({
           onClick={(e) => {
             if (smoothScrollToId(secondary.sectionId)) e.preventDefault();
           }}
-          className="rounded-md text-[15px] font-medium text-zinc-700 underline-offset-4 outline-none hover:text-zinc-950 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:text-zinc-300 dark:hover:text-white"
+          className="inline-flex h-12 items-center rounded-xl border border-black/10 px-5 text-sm font-medium text-zinc-600 transition-colors outline-none hover:border-black/25 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:border-white/10 dark:text-zinc-400 dark:hover:border-white/25 dark:hover:text-white"
         >
           {secondary.label}
         </a>

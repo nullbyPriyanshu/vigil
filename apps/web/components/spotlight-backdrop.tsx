@@ -91,7 +91,7 @@ export function SpotlightBackdrop({
   // Dark-mode lines are light-on-dark (white); light-mode lines are the
   // reverse (a soft near-black, matching the app-shell's own zinc-900
   // borders rather than pure black).
-  const strokeRGB = isDark ? "255,255,255" : "15,15,17";
+  const strokeRGB = isDark ? "241,240,238" : "13,13,13";
 
   // Static grid for non-interactive variants: drawn once (and on resize,
   // or a theme change), with no cursor tracking at all. No-ops for

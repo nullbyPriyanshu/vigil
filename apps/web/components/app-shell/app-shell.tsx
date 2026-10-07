@@ -21,13 +21,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#09090b]">
+    <div className="flex h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
       <RealtimeListener />
       <AppHeader onMenuClick={() => setMobileNavOpen(true)} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-        <main className="relative m-2 min-w-0 flex-1 overflow-y-auto rounded-xl border border-black/[0.06] bg-zinc-50 transition-colors duration-300 dark:border-white/[0.08] dark:bg-[#0f0f11]">
-          <div className="relative w-full max-w-7xl px-8 py-8">
+        <main className="relative m-1.5 min-w-0 flex-1 overflow-y-auto overscroll-contain rounded-xl sm:m-2 border border-black/[0.06] bg-zinc-50 transition-colors duration-300 dark:border-white/[0.08] dark:bg-[#0a0a0a]">
+          <div className="relative w-full max-w-7xl px-4 py-6 sm:px-8 sm:py-8">
             {children}
           </div>
         </main>

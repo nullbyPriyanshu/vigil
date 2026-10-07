@@ -11,31 +11,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getIncidentsApi, type IncidentRow } from "@/lib/api/incidents";
+import { getIncidentsApi } from "@/lib/api/incidents";
+import { latestChange } from "@/lib/incident-latest";
 import { timeAgo } from "@/lib/time";
 
 const SEEN_KEY = "vigil:bell-seen-at";
-
-// What happened to an incident most recently, and when.
-function latest(incident: IncidentRow) {
-  if (incident.status === "RESOLVED" && incident.resolvedAt) {
-    return {
-      at: incident.resolvedAt,
-      text: incident.resolvedBy
-        ? `Resolved by ${incident.resolvedBy.name}`
-        : "Resolved automatically",
-    };
-  }
-  if (incident.status === "ACKNOWLEDGED" && incident.acknowledgedAt) {
-    return {
-      at: incident.acknowledgedAt,
-      text: incident.acknowledgedBy
-        ? `Acknowledged by ${incident.acknowledgedBy.name}`
-        : "Acknowledged",
-    };
-  }
-  return { at: incident.createdAt, text: "Triggered, waiting for someone" };
-}
 
 // The bell in the top bar: the latest thing that happened to each recent
 // incident. The red dot means something changed since it was last opened.
@@ -63,7 +43,7 @@ export function NotificationsBell() {
   });
 
   const items = (incidents ?? [])
-    .map((incident) => ({ incident, ...latest(incident) }))
+    .map((incident) => ({ incident, ...latestChange(incident) }))
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 8);
 
@@ -82,7 +62,7 @@ export function NotificationsBell() {
       >
         <BellIcon className="size-4" />
         {unread > 0 && (
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#09090b]" />
+          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#050505]" />
         )}
       </DropdownMenuTrigger>
 

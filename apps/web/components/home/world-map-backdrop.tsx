@@ -159,10 +159,10 @@ export function WorldMapBackdrop({
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    const dotRGB = isDark ? "255,255,255" : "15,15,17";
+    const dotRGB = isDark ? "241,240,238" : "13,13,13";
     const dotAlpha = (isDark ? 0.14 : 0.16) * emphasis;
-    // emerald-400 / emerald-500, the app's accent.
-    const accentRGB = isDark ? "52,211,153" : "16,185,129";
+    // Periwinkle on dark, Twilight Indigo on light: the app's accent.
+    const accentRGB = isDark ? "241,240,238" : "13,13,13";
 
     const cache = document.createElement("canvas");
     const cacheCtx = cache.getContext("2d");

@@ -86,7 +86,7 @@ export default function PoliciesPage() {
                     className={
                       policy.serviceCount === 0
                         ? "hidden shrink-0 text-xs text-muted-foreground sm:block"
-                        : "hidden shrink-0 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 sm:block dark:text-emerald-400"
+                        : "hidden shrink-0 text-xs text-zinc-700 sm:block dark:text-zinc-300"
                     }
                   >
                     {policy.serviceCount === 0

@@ -20,7 +20,7 @@ export function OpenIncidentsPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Open incidents</CardTitle>
+        <CardTitle>Needs attention</CardTitle>
         <CardAction className="flex items-center gap-3">
           <LiveBadge />
           <Link

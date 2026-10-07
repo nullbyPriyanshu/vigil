@@ -83,7 +83,7 @@ export function Sidebar({
         {active && (
           <span
             aria-hidden
-            className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+            className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-emerald-400"
           />
         )}
         <Icon
@@ -132,7 +132,7 @@ export function Sidebar({
           // transition-all (not just -transform) so the bg/border dark:
           // swap fades in step with the rest of the shell instead of
           // snapping instantly while everything around it fades.
-          "fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-black/[0.06] bg-white transition-all duration-300 ease-out dark:border-white/[0.06] dark:bg-[#09090b]",
+          "fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-black/[0.06] bg-white transition-all duration-300 ease-out dark:border-white/[0.06] dark:bg-[#050505]",
           collapsed ? "lg:w-16" : "lg:w-60",
           "lg:static lg:z-0 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",

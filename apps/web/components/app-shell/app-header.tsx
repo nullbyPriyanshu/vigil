@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { VigilMark } from "@/components/logo";
 import { MenuIcon } from "lucide-react";
 import { NotificationsBell } from "@/components/app-shell/notifications-bell";
 import { OrgSwitcher } from "@/components/app-shell/org-switcher";
@@ -19,7 +19,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { session, loading } = useAuth();
 
   return (
-    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#09090b]">
+    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#050505]">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
@@ -37,10 +37,10 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
             a "Go to dashboard" action when it sees a session instead. */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 font-mono text-lg leading-none font-bold tracking-widest text-zinc-900 uppercase dark:text-zinc-100"
+          className="flex shrink-0 items-center gap-2 text-[15px] leading-none font-semibold tracking-[0.22em] text-zinc-900 uppercase dark:text-zinc-100"
         >
           {/* Decorative: the "Vigil" text next to it is the link's name. */}
-          <Image src="/logo-vigil.png" alt="" width={22} height={22} priority />
+          <VigilMark />
           Vigil
         </Link>
 

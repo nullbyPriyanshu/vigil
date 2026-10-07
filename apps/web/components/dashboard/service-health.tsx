@@ -78,7 +78,7 @@ export function ServiceHealth() {
                 <span
                   className={
                     service.openIncidentCount > 0
-                      ? "shrink-0 rounded-md bg-red-500/10 px-1.5 py-0.5 text-xs font-medium text-red-600 dark:text-red-400"
+                      ? "shrink-0 text-xs font-medium text-red-600 dark:text-red-400"
                       : "shrink-0 text-xs text-zinc-500"
                   }
                 >

@@ -61,7 +61,7 @@ export function UserMenu({
         className={cn(
           "group/user flex min-w-0 cursor-pointer items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60",
           compact
-            ? "ring-offset-2 ring-offset-white transition-shadow hover:ring-2 hover:ring-zinc-300 data-popup-open:ring-2 data-popup-open:ring-zinc-300 dark:ring-offset-[#09090b] dark:hover:ring-zinc-700 dark:data-popup-open:ring-zinc-700"
+            ? "ring-offset-2 ring-offset-white transition-shadow hover:ring-2 hover:ring-zinc-300 data-popup-open:ring-2 data-popup-open:ring-zinc-300 dark:ring-offset-[#050505] dark:hover:ring-zinc-700 dark:data-popup-open:ring-zinc-700"
             : "gap-2 py-1 pr-2 pl-1 transition-colors hover:bg-black/[0.04] data-popup-open:bg-black/[0.06] dark:hover:bg-white/[0.04] dark:data-popup-open:bg-white/[0.06]",
         )}
       >
