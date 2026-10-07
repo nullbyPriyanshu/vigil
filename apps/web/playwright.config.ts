@@ -7,7 +7,9 @@ export default defineConfig({
   testDir: "./e2e",
   // One at a time: the tests share one test organization.
   workers: 1,
-  timeout: 60 * 1000,
+  timeout: 90 * 1000,
+  // A hosted database can take a few seconds to answer.
+  expect: { timeout: 15 * 1000 },
   reporter: "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",

@@ -24,6 +24,7 @@ import { EscalationModule } from './escalation/escalation.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { DemoModule } from './demo/demo.module';
+import { MonitorsModule } from './monitors/monitors.module';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -70,6 +71,7 @@ import { RedisModule } from './redis/redis.module';
     OnboardingModule,
     DemoModule,
     HealthModule,
+    MonitorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

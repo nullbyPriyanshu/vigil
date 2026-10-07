@@ -62,3 +62,38 @@ test("the about page and footer link are public", async ({ page }) => {
     "https://github.com/nullbyPriyanshu/vigil",
   );
 });
+
+test("a monitor can be added, shows as up, and is refused for a private address", async ({ page }) => {
+  await signInWithSetup(page);
+  const name = `E2E site ${Date.now()}`;
+
+  await page.goto("/monitors");
+  await page.getByRole("button", { name: /New monitor|Add your first monitor/ }).first().click();
+
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await dialog.locator("#monitor-service").click();
+  await page.getByRole("option").first().click();
+
+  // The server must never be pointed at its own network.
+  await dialog.getByLabel("Address to check").fill("http://127.0.0.1:5432");
+  await dialog.getByRole("button", { name: "Add monitor" }).click();
+  await expect(dialog.getByText(/private network/)).toBeVisible();
+
+  // A real public address is checked straight away.
+  await dialog.getByLabel("Address to check").fill("https://example.com");
+  await dialog.getByRole("button", { name: "Add monitor" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  const row = page.getByRole("link").filter({ hasText: name });
+  await expect(row).toContainText("Up");
+
+  // The detail page has its figures, and the monitor can be removed.
+  await row.click();
+  await expect(page.getByText("Uptime, last 30 days")).toBeVisible();
+  await expect(page.getByText("100%")).toBeVisible();
+
+  const monitors = await api<{ data: { id: string; name: string }[] }>(page, "GET", "/monitors");
+  const created = monitors.data.data.find((m) => m.name === name);
+  if (created) await api(page, "DELETE", `/monitors/${created.id}`);
+});

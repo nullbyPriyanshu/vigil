@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import { GlobalLoader } from "@/components/global-loader";
 import { ThemeProvider } from "@/components/theme-provider";
+import { COLOR_THEME_SCRIPT } from "@/lib/hooks/use-color-theme";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -40,6 +41,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Applies the saved colour theme before the first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: COLOR_THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <Providers>

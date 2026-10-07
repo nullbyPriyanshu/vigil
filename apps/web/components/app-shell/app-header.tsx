@@ -19,7 +19,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { session, loading } = useAuth();
 
   return (
-    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-[#050505]">
+    <header className="relative z-10 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-black/[0.06] bg-white px-4 transition-colors duration-300 sm:px-6 dark:border-white/[0.06] dark:bg-(--ink-0)">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"

@@ -116,7 +116,7 @@ export function IncidentsLine({
 
       <div className="min-w-0 flex-1">
         <div
-          className="relative cursor-crosshair touch-none text-zinc-900 dark:text-zinc-100"
+          className="relative cursor-crosshair touch-none text-emerald-500"
           style={{ height }}
           onPointerMove={(event) => {
             const box = event.currentTarget.getBoundingClientRect();
@@ -137,7 +137,7 @@ export function IncidentsLine({
             preserveAspectRatio="none"
             className="animate-chart-reveal absolute inset-0 size-full overflow-visible"
           >
-            <path d={`${line} L100,100 L0,100 Z`} fill="currentColor" opacity={0.07} />
+            <path d={`${line} L100,100 L0,100 Z`} fill="currentColor" opacity={0.1} />
             <path
               d={line}
               fill="none"

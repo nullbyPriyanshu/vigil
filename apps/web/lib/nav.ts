@@ -1,4 +1,5 @@
 import {
+  ActivityIcon,
   ArrowLeftIcon,
   BarChart3Icon,
   BoxesIcon,
@@ -42,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Configure",
     items: [
       { label: "Services", href: "/services", icon: BoxesIcon },
+      { label: "Monitors", href: "/monitors", icon: ActivityIcon },
       { label: "Policies", href: "/policies", icon: WorkflowIcon },
       { label: "Schedules", href: "/schedules", icon: CalendarClockIcon },
     ],

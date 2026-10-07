@@ -8,10 +8,10 @@ export function SiteFooter() {
     "cursor-pointer rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:outline-none";
 
   return (
-    <footer className="relative z-10 border-t border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-[#050505]">
+    <footer className="relative z-10 border-t border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-(--ink-0)">
       <div className="flex flex-col-reverse items-center justify-between gap-3 px-4 py-6 sm:flex-row sm:px-6">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Vigil. All rights reserved.
+          © {new Date().getFullYear()} Priyanshu Maurya. Open source under the MIT licence.
         </p>
         <div className="flex items-center gap-5">
           <Link

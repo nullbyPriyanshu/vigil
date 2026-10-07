@@ -5,9 +5,13 @@
 
 2. Deleting an org leaves orphaned users so we can alert them "You dont belong to any org".
 
-3. No rate limiting yet.** Someone could try many passwords quickly. Adding
-   `@nestjs/throttler` to `/login` and `/forgot-password` is the next
-   improvement.
+3. Wrong passwords are counted per email address in Redis. After 5 in
+   15 minutes that address is locked until the 15 minutes are up, and a
+   correct login clears the count. Counting per address, not per IP,
+   because the API sits behind the web app and sees every visitor as the
+   same IP. Password-reset emails are capped at 3 per address per
+   15 minutes; the fourth request gets the same answer but no email.
+
 
 4. One incident per problem, without a special database index. When an
    alert arrives, the service's row is locked (`SELECT ... FOR UPDATE`)
@@ -59,3 +63,24 @@
 14. The web app has one accent colour, and it is the text colour. Red and
     amber are kept only for incident status and severity, so colour always
     means something.
+
+15. Uptime monitors reuse the alert pipeline. A failed check calls the same
+    `createAlert` a webhook does, with the monitor's id as the dedup key,
+    so incidents, escalation, emails and auto-close needed no new code.
+
+16. One queue job runs every minute and checks whichever monitors are due,
+    instead of one repeating job per monitor. Fewer moving parts, and
+    adding or deleting a monitor never has to touch the queue.
+
+17. A monitor alerts after two failures in a row, not one, because a
+    single dropped request is normal on the internet and nobody should be
+    woken for it.
+
+18. Monitors refuse private and local addresses (127.x, 10.x, 192.168.x
+    and so on), checked both when saving and before every visit, and they
+    don't follow redirects. Otherwise anyone with an account could make
+    the server probe its own network.
+    `ALLOW_PRIVATE_MONITOR_URLS=true` turns this off for local testing.
+
+19. Check results are kept for 30 days and then deleted by the same
+    minute job, so the table can't grow without limit.

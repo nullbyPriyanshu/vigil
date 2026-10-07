@@ -1,5 +1,9 @@
 import { createHash } from 'crypto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
@@ -19,8 +23,14 @@ function createPrismaMock() {
     user: {
       findUnique: jest.fn(),
       update: jest.fn<Promise<unknown>, [{ data: { passwordHash: string } }]>(),
+      delete: jest.fn(),
     },
     refreshToken: { deleteMany: jest.fn() },
+    membership: { findMany: jest.fn().mockResolvedValue([]) },
+    service: { deleteMany: jest.fn() },
+    escalationPolicy: { deleteMany: jest.fn() },
+    schedule: { deleteMany: jest.fn() },
+    organization: { delete: jest.fn() },
     $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   };
 }
@@ -175,6 +185,103 @@ describe('UsersService', () => {
           tokenHash: { not: hashToken('this-device-token') },
         },
       });
+    });
+  });
+
+  describe('updateUserEmail and deleteAccount', () => {
+    let user: Record<string, unknown>;
+
+    beforeAll(async () => {
+      user = {
+        id: 'u1',
+        name: 'Test',
+        email: 'old@acme.com',
+        timezone: 'Asia/Kolkata',
+        emailNotifications: true,
+        createdAt: new Date(),
+        passwordHash: await bcrypt.hash(CURRENT, 4),
+      };
+    });
+
+    it('changes the email when the password is right and the address is free', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(null);
+      prisma.user.update.mockResolvedValue({ ...user, email: 'new@acme.com' });
+
+      const profile = await service.updateUserEmail('u1', {
+        email: 'new@acme.com',
+        currentPassword: CURRENT,
+      });
+
+      expect(profile.email).toBe('new@acme.com');
+    });
+
+    it('refuses an email another account already uses', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce({ id: 'u2' });
+
+      await expect(
+        service.updateUserEmail('u1', {
+          email: 'taken@acme.com',
+          currentPassword: CURRENT,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses to change the email with a wrong password', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      await expect(
+        service.updateUserEmail('u1', {
+          email: 'new@acme.com',
+          currentPassword: 'wrong',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('will not delete someone who owns an organization with other members', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.membership.findMany.mockResolvedValue([
+        {
+          organizationId: 'o1',
+          organization: { name: 'Acme', memberships: [{}, {}] },
+        },
+      ]);
+
+      await expect(
+        service.deleteAccount('u1', { currentPassword: CURRENT }),
+      ).rejects.toThrow(
+        'You own Acme, which has other members. Transfer ownership or delete the organization first',
+      );
+      expect(prisma.user.delete).not.toHaveBeenCalled();
+    });
+
+    it('takes an organization with nobody else in it along', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.membership.findMany.mockResolvedValue([
+        {
+          organizationId: 'o1',
+          organization: { name: 'Solo', memberships: [{}] },
+        },
+      ]);
+
+      await service.deleteAccount('u1', { currentPassword: CURRENT });
+
+      expect(prisma.organization.delete).toHaveBeenCalledWith({
+        where: { id: 'o1' },
+      });
+      expect(prisma.user.delete).toHaveBeenCalledWith({ where: { id: 'u1' } });
+    });
+
+    it('deletes the account when the password is right', async () => {
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      await service.deleteAccount('u1', { currentPassword: CURRENT });
+
+      expect(prisma.user.delete).toHaveBeenCalledWith({ where: { id: 'u1' } });
     });
   });
 });

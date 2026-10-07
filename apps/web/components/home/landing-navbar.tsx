@@ -57,7 +57,7 @@ function NavbarAuth() {
 
 export function LandingNavbar() {
   return (
-    <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-[#050505]">
+    <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white transition-colors duration-300 dark:border-white/[0.06] dark:bg-(--ink-0)">
       <div className="relative flex h-16 items-center justify-between gap-6 px-4 sm:px-6">
         <Link
           href="/"

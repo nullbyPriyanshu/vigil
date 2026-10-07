@@ -52,7 +52,7 @@ const BUILT_WITH = [
 
 export default function AboutPage() {
   return (
-    <div className="flex min-h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-[#050505]">
+    <div className="flex min-h-dvh flex-col bg-white text-foreground transition-colors duration-300 dark:bg-(--ink-0)">
       <LandingNavbar />
 
       <main className="flex-1">

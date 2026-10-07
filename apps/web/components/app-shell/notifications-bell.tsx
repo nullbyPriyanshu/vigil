@@ -62,7 +62,7 @@ export function NotificationsBell() {
       >
         <BellIcon className="size-4" />
         {unread > 0 && (
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#050505]" />
+          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-(--ink-0)" />
         )}
       </DropdownMenuTrigger>
 

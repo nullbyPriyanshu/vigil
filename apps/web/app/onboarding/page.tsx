@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckIcon, Loader2 } from "lucide-react";
 
+import { VigilMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,13 +180,14 @@ export default function OnboardingPage() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-lg">
-        <p className="text-sm font-semibold tracking-[0.2em] text-foreground">
+        <p className="flex items-center gap-2 text-[15px] leading-none font-semibold tracking-[0.22em] text-foreground">
+          <VigilMark />
           VIGIL
         </p>
-        <h1 className="mt-6 text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="mt-8 text-3xl font-semibold text-foreground">
           Welcome to Vigil, {firstName}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-2 text-base text-muted-foreground">
           Four short steps and you&apos;ll have seen a real alert reach your
           inbox.
         </p>

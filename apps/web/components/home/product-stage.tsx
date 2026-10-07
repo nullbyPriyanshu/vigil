@@ -259,7 +259,7 @@ function FloatingCard({
     <div
       aria-hidden
       className={cn(
-        "absolute hidden rounded-xl bg-white shadow-[0_24px_50px_-20px_rgba(0,0,0,0.35)] will-change-transform lg:block dark:bg-[#0a0a0a] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,1)]",
+        "absolute hidden rounded-xl bg-white shadow-[0_24px_50px_-20px_rgba(0,0,0,0.35)] will-change-transform lg:block dark:bg-(--ink-1) dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,1)]",
         className,
       )}
       style={{

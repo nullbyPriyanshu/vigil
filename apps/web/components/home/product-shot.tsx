@@ -3,15 +3,18 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { addLayer, clamp01, ease, prefersReducedMotion } from "@/components/home/scroll-engine";
+import { useColorTheme } from "@/lib/hooks/use-color-theme";
 import { cn } from "@/lib/utils";
 
 export const SHOT_FRAME =
-  "overflow-hidden rounded-xl border border-black/10 bg-white shadow-[0_40px_80px_-30px_rgba(0,0,0,0.3)] sm:rounded-2xl dark:border-white/10 dark:bg-[#050505] dark:shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]";
+  "overflow-hidden rounded-xl border border-black/10 bg-white shadow-[0_40px_80px_-30px_rgba(0,0,0,0.3)] sm:rounded-2xl dark:border-white/10 dark:bg-(--ink-0) dark:shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]";
 
-// A real screenshot of the app. Two files, one per theme, swapped with CSS
-// so the picture always matches the page around it. `unoptimized` serves
-// the original 2880px capture as-is: these are the page's showpiece, and
-// recompressing them is what makes small UI text look soft.
+// A real screenshot of the app. There is one file per colour theme and per
+// light/dark mode, so the picture always matches the page around it. Light
+// and dark are swapped with CSS; the colour comes from the visitor's saved
+// choice. `unoptimized` serves the original 2880px capture as-is: these are
+// the page's showpiece, and recompressing them is what makes small UI text
+// look soft.
 export function ShotImages({
   name,
   alt,
@@ -21,10 +24,12 @@ export function ShotImages({
   alt: string;
   priority?: boolean;
 }) {
+  const { theme } = useColorTheme();
+
   return (
     <>
       <Image
-        src={`/landing/${name}-dark.png`}
+        src={`/landing/${name}-${theme}-dark.png`}
         alt={alt}
         width={2880}
         height={1800}
@@ -33,7 +38,7 @@ export function ShotImages({
         className="hidden h-auto w-full dark:block"
       />
       <Image
-        src={`/landing/${name}-light.png`}
+        src={`/landing/${name}-${theme}-light.png`}
         alt={alt}
         width={2880}
         height={1800}

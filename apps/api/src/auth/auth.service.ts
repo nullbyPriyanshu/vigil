@@ -2,6 +2,8 @@ import { createHash, randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -16,9 +18,14 @@ import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import {
   BCRYPT_ROUNDS,
+  LOGIN_LOCK_SECONDS,
+  MAX_LOGIN_FAILS,
+  MAX_RESET_REQUESTS,
   PASSWORD_RESET_TTL_MS,
   REFRESH_TOKEN_TTL_MS,
+  RESET_REQUEST_WINDOW_SECONDS,
 } from './auth.constants';
+import { RedisService } from '../redis/redis.service';
 import type { JwtPayload } from './auth.guard';
 
 const FORGOT_PASSWORD_MESSAGE =
@@ -32,6 +39,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly mailService: MailService,
+    private readonly redis: RedisService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -113,6 +121,17 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    const failsKey = `login-fails:${dto.email}`;
+    const fails = Number(await this.redis.get(failsKey));
+    if (fails >= MAX_LOGIN_FAILS) {
+      const seconds = await this.redis.ttl(failsKey);
+      const minutes = Math.max(1, Math.ceil(seconds / 60));
+      throw new HttpException(
+        `Too many wrong passwords. Try again in ${minutes} minutes`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { memberships: { orderBy: { createdAt: 'asc' } } },
@@ -122,11 +141,17 @@ export class AuthService {
 
     if (!user) {
       await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+      await this.countLoginFail(failsKey);
       throw invalid;
     }
 
     const matches = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!matches) throw invalid;
+    if (!matches) {
+      await this.countLoginFail(failsKey);
+      throw invalid;
+    }
+
+    await this.redis.del(failsKey);
 
     const membership = user.memberships[0];
     if (!membership) {
@@ -234,6 +259,15 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    const requestsKey = `reset-requests:${email}`;
+    const requests = await this.redis.incr(requestsKey);
+    if (requests === 1) {
+      await this.redis.expire(requestsKey, RESET_REQUEST_WINDOW_SECONDS);
+    }
+    if (requests > MAX_RESET_REQUESTS) {
+      return { message: FORGOT_PASSWORD_MESSAGE };
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -362,5 +396,12 @@ export class AuthService {
       .replace(/[^a-z0-9-]/g, '')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  private async countLoginFail(failsKey: string) {
+    const fails = await this.redis.incr(failsKey);
+    if (fails === 1) {
+      await this.redis.expire(failsKey, LOGIN_LOCK_SECONDS);
+    }
   }
 }

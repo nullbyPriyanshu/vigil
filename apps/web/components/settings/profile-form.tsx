@@ -111,7 +111,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             className="h-9"
           />
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Used to sign in. It can&apos;t be changed yet.
+            Used to sign in. Change it under Email, below.
           </p>
         </div>
 

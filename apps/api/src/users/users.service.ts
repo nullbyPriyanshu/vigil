@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -11,6 +12,8 @@ import { BCRYPT_ROUNDS } from 'src/auth/auth.constants';
 import { MailService } from 'src/mail/mail.service';
 import { UpdateUserProfileDto } from './dto/updateUserProfile.dto';
 import { UpdateUserPasswordDto } from './dto/updateUserPassword.dto';
+import { UpdateUserEmailDto } from './dto/updateUserEmail.dto';
+import { DeleteAccountDto } from './dto/deleteAccount.dto';
 
 @Injectable()
 export class UsersService {
@@ -103,6 +106,77 @@ export class UsersService {
     }
 
     return { message: 'Password changed' };
+  }
+
+  async updateUserEmail(userId: string, dto: UpdateUserEmailDto) {
+    const user = await this.findUserOrThrow(userId);
+
+    const matches = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!matches) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    if (dto.email === user.email) {
+      throw new BadRequestException('That is already your email address');
+    }
+
+    const taken = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (taken) {
+      throw new ConflictException('Another account already uses this email');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { email: dto.email },
+    });
+
+    return this.toProfile(updatedUser);
+  }
+
+  async deleteAccount(userId: string, dto: DeleteAccountDto) {
+    const user = await this.findUserOrThrow(userId);
+
+    const matches = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!matches) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const owned = await this.prisma.membership.findMany({
+      where: { userId, role: 'OWNER' },
+      include: { organization: { include: { memberships: true } } },
+    });
+
+    const shared = owned.filter(
+      (membership) => membership.organization.memberships.length > 1,
+    );
+    if (shared.length > 0) {
+      const names = shared.map((membership) => membership.organization.name);
+      throw new ConflictException(
+        `You own ${names.join(', ')}, which has other members. Transfer ownership or delete the organization first`,
+      );
+    }
+
+    for (const membership of owned) {
+      const organizationId = membership.organizationId;
+      await this.prisma.service.deleteMany({ where: { organizationId } });
+      await this.prisma.escalationPolicy.deleteMany({
+        where: { organizationId },
+      });
+      await this.prisma.schedule.deleteMany({ where: { organizationId } });
+      await this.prisma.organization.delete({ where: { id: organizationId } });
+    }
+
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    return { message: 'Account deleted' };
   }
 
   private async findUserOrThrow(userId: string) {

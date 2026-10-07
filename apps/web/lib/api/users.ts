@@ -23,3 +23,9 @@ export const changePasswordApi = (data: {
   currentPassword: string;
   newPassword: string;
 }) => api.patch<{ message: string }>("/user/profile/update-password", data);
+
+export const changeEmailApi = (data: { email: string; currentPassword: string }) =>
+  api.patch<Profile>("/user/profile/update-email", data);
+
+export const deleteAccountApi = (currentPassword: string) =>
+  api.delete<{ message: string }>("/user/profile", { data: { currentPassword } });
