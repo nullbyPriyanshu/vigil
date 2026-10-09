@@ -4,6 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_WS_URL"],
       "outputs": [".next/**", "dist/**"]
     },
     "lint": {},
