@@ -4,7 +4,10 @@ Vigil is an on-call and incident management platform. Monitoring tools send
 it alerts, it works out who is on call, emails that person, and keeps
 escalating to the next person until someone acknowledges.
 
-Built by [Priyanshu Maurya](https://github.com/nullbyPriyanshu).
+**Live:** [vigil-chi-two.vercel.app](https://vigil-chi-two.vercel.app)
+
+Built by [Priyanshu Maurya](https://github.com/nullbyPriyanshu). More about the project on the
+[About page](https://vigil-chi-two.vercel.app/about).
 
 ## What it does
 
@@ -94,12 +97,65 @@ as their own test person (`delivered+e2e@resend.dev`) in their own
 "E2E Tests" organization, which they create on first run and keep. They
 never touch another organization.
 
+## Where it runs
+
+| Part | Host | Address |
+| --- | --- | --- |
+| Web app | Vercel | https://vigil-chi-two.vercel.app |
+| API | Render | https://vigil-api-ojjk.onrender.com |
+| API health | Render | https://vigil-api-ojjk.onrender.com/health |
+| Database | Prisma Postgres | |
+| Redis | Render Key Value | |
+
+Both hosts build from `main`. The settings that make a monorepo build work:
+
+**Render (API)**
+
+| Setting | Value |
+| --- | --- |
+| Root directory | empty |
+| Build command | `pnpm install && pnpm --filter api build` |
+| Start command | `pnpm --filter api start:prod` |
+| Health check path | `/health` |
+
+Environment: everything from `apps/api/.env` except `PORT`, plus:
+
+```bash
+NODE_ENV=production
+NODE_VERSION=22
+FRONTEND_URL=https://vigil-chi-two.vercel.app
+KEEP_AWAKE_URL=https://vigil-api-ojjk.onrender.com/health
+REDIS_URL=            # the Key Value store's internal address
+```
+
+`FRONTEND_URL` has no slash at the end. It is compared exactly, for CORS
+and for the live-update connection, and it is the start of every link in
+an email.
+
+**Vercel (web)**
+
+Root directory `apps/web`, and two variables:
+
+```bash
+BACKEND_URL=https://vigil-api-ojjk.onrender.com
+NEXT_PUBLIC_WS_URL=https://vigil-api-ojjk.onrender.com
+```
+
+Both must also be listed under `env` in `turbo.json`, or Turborepo keeps
+them from the build.
+
+**Resend**
+
+A webhook to `https://vigil-api-ojjk.onrender.com/v1/webhooks/resend` for
+`email.delivered`, `email.bounced`, `email.complained` and `email.failed`.
+Its signing secret goes in `RESEND_WEBHOOK_SECRET` on Render.
+
 ## Hosting on a free plan that sleeps
 
 Free hosts such as Render put a server to sleep after about 15 minutes
 without a visitor, and a sleeping Vigil can't page anyone. Set
 `KEEP_AWAKE_URL` to the API's own public health address, for example
-`https://your-api.onrender.com/health`, and the API visits it once a
+`https://vigil-api-ojjk.onrender.com/health`, and the API visits it once a
 minute so it never looks idle.
 
 This keeps a running server awake. It cannot wake one that has already
@@ -109,13 +165,13 @@ outside checker (UptimeRobot is free) at the same address.
 ## Sending an alert
 
 ```bash
-curl -X POST http://localhost:3000/api/alerts \
+curl -X POST https://vigil-chi-two.vercel.app/api/alerts \
   -H "X-Vigil-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"title": "Disk almost full", "severity": "high", "dedupKey": "disk-db-1"}'
 ```
 
-Sentry, Grafana and UptimeRobot post to `/api/alerts/sentry`,
+Locally, use `http://localhost:3000` instead. Sentry, Grafana and UptimeRobot post to `/api/alerts/sentry`,
 `/api/alerts/grafana` and `/api/alerts/uptimerobot` with the same header.
 Each service page has copy-and-paste instructions.
 
