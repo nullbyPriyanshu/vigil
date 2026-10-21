@@ -1,10 +1,12 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Logger, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { PrismaService } from 'src/prisma.service';
 import { RedisService } from 'src/redis/redis.service';
 
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -17,14 +19,16 @@ export class HealthController {
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-    } catch {
+    } catch (error) {
       db = 'down';
+      this.logger.error(`Database check failed: ${String(error)}`);
     }
 
     try {
       await this.redis.ping();
-    } catch {
+    } catch (error) {
       redis = 'down';
+      this.logger.error(`Redis check failed: ${String(error)}`);
     }
 
     if (db === 'down' || redis === 'down') {
@@ -38,5 +42,10 @@ export class HealthController {
       redis,
       uptimeSeconds: Math.floor(process.uptime()),
     };
+  }
+
+  @Get('live')
+  live() {
+    return { status: 'ok', uptimeSeconds: Math.floor(process.uptime()) };
   }
 }

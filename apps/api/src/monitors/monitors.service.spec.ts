@@ -218,22 +218,4 @@ describe('MonitorsService', () => {
     expect(checked).toEqual(['never-checked', 'every-5-due']);
     expect(prisma.monitorCheck.deleteMany).toHaveBeenCalled();
   });
-
-  it('visits its own address every minute when KEEP_AWAKE_URL is set', async () => {
-    process.env.KEEP_AWAKE_URL = 'https://vigil-api.example.com/health';
-
-    await service.checkDueMonitors();
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://vigil-api.example.com/health',
-      expect.anything(),
-    );
-    delete process.env.KEEP_AWAKE_URL;
-  });
-
-  it('visits nothing extra when KEEP_AWAKE_URL is not set', async () => {
-    await service.checkDueMonitors();
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
 });

@@ -63,7 +63,6 @@ API_KEY_PEPPER=another-long-random-string
 RESEND_API_KEY=            # from resend.com
 RESEND_WEBHOOK_SECRET=     # optional, for delivery status
 MAIL_FROM="Vigil <onboarding@resend.dev>"
-KEEP_AWAKE_URL=            # optional: this API's own public /health address
 ```
 
 Create `apps/web/.env.local`:
@@ -116,7 +115,7 @@ Both hosts build from `main`. The settings that make a monorepo build work:
 | Root directory | empty |
 | Build command | `pnpm install && pnpm --filter api build` |
 | Start command | `pnpm --filter api start:prod` |
-| Health check path | `/health` |
+| Health check path | `/health/live` |
 
 Environment: everything from `apps/api/.env` except `PORT`, plus:
 
@@ -124,7 +123,6 @@ Environment: everything from `apps/api/.env` except `PORT`, plus:
 NODE_ENV=production
 NODE_VERSION=22
 FRONTEND_URL=https://vigil-chi-two.vercel.app
-KEEP_AWAKE_URL=https://vigil-api-ojjk.onrender.com/health
 REDIS_URL=            # the Key Value store's internal address
 ```
 
@@ -153,14 +151,14 @@ Its signing secret goes in `RESEND_WEBHOOK_SECRET` on Render.
 ## Hosting on a free plan that sleeps
 
 Free hosts such as Render put a server to sleep after about 15 minutes
-without a visitor, and a sleeping Vigil can't page anyone. Set
-`KEEP_AWAKE_URL` to the API's own public health address, for example
-`https://vigil-api-ojjk.onrender.com/health`, and the API visits it once a
-minute so it never looks idle.
+without a visitor, and a sleeping Vigil can't page anyone. Point a free
+outside checker such as UptimeRobot at
+`https://vigil-api-ojjk.onrender.com/health/live` every 5 minutes. The visits
+keep the server awake, and the checker tells you when Vigil itself is down.
 
-This keeps a running server awake. It cannot wake one that has already
-stopped, and it cannot tell you when Vigil itself is down, so also point an
-outside checker (UptimeRobot is free) at the same address.
+Use `/health/live` for this and for the host's health check. It only says the
+server is running. `/health` also queries the database and Redis, and hitting
+it every few minutes can use up a free database plan's monthly operations.
 
 ## Sending an alert
 

@@ -173,8 +173,6 @@ export class MonitorsService implements OnModuleInit {
   }
 
   async checkDueMonitors() {
-    await this.keepAwake();
-
     const monitors = await this.prisma.monitor.findMany();
     const now = Date.now();
 
@@ -235,19 +233,6 @@ export class MonitorsService implements OnModuleInit {
         'resolved',
         'The address is answering again',
       );
-    }
-  }
-
-  private async keepAwake() {
-    const url = process.env.KEEP_AWAKE_URL;
-    if (!url) {
-      return;
-    }
-
-    try {
-      await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-    } catch {
-      return;
     }
   }
 
